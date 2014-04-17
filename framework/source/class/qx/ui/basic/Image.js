@@ -445,6 +445,14 @@ qx.Class.define("qx.ui.basic.Image",
         return;
       }
 
+      // Detect if the image registry knows this image
+      // Check for images in HiDPI
+      var m = source.match(/^(.*)\.([a-zA-z]*)$/);
+      var pathx2 = null;
+      if((window.devicePixelRatio || 1) > 1 && m && m[1] && m[2]){
+        pathx2 = m[1] + "@2x." + m[2];
+      }
+
       this.__checkForContentElementSwitch(source);
 
       if ((qx.core.Environment.get("engine.name") == "mshtml") &&
@@ -458,7 +466,15 @@ qx.Class.define("qx.ui.basic.Image",
       var contentEl = this.__getContentElement();
 
       // Detect if the image registry knows this image
-      if (qx.util.ResourceManager.getInstance().has(source)) {
+      if (pathx2 && qx.util.ResourceManager.getInstance().has(pathx2)) {
+        var ResourceManager = qx.util.ResourceManager.getInstance();
+        this.__setManagedImage(this.getContentElement(), pathx2);
+        var sx = parseInt(ResourceManager.getImageWidth(pathx2) / 2);
+        var sy = parseInt(ResourceManager.getImageHeight(pathx2) / 2);
+        this.setWidth(sx);
+        this.setHeight(sy);
+        this.setScale(true);
+      } else if (qx.util.ResourceManager.getInstance().has(source)) {
         this.__setManagedImage(contentEl, source);
         this.__fireLoadEvent();
       } else if (qx.io.ImageLoader.isLoaded(source)) {

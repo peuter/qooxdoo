@@ -421,7 +421,7 @@ qx.Class.define("qx.event.Manager",
      *         using the {@link #removeListenerById} method.
      * @throws {Error} if the parameters are wrong
      */
-    addListener : function(target, type, listener, self, capture)
+    addListener : function(target, type, listener, self, capture, first)
     {
       if (qx.core.Environment.get("qx.debug"))
       {
@@ -467,7 +467,11 @@ qx.Class.define("qx.event.Manager",
         unique : unique
       };
 
-      entryList.push(entry);
+      if(first){
+        entryList.unshift(entry);
+      }else{
+        entryList.push(entry);
+      }
 
       return entryKey + "|" + unique;
     },
