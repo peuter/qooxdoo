@@ -123,9 +123,11 @@ qx.Class.define("qx.ui.form.renderer.AbstractRenderer",
           if (entry.name && entry.name.translate) {
             entry.name = entry.name.translate();
           }
-          var newText = this._createLabelText(entry.name, entry.item);
-          entry.label.setValue(newText);
-        }
+          if (entry.label) {
+            var newText = this._createLabelText(entry.name, entry.item);
+            entry.label.setValue(newText);
+          }
+        };
       },
 
       "false" : null
