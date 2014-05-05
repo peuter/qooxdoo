@@ -13,7 +13,10 @@
 
 .iscroll {
   width:100%;
-  position:absolute;
+
+  .content {
+    padding-bottom: 10px;
+  }
 }
 
 // Bugfix for Android 2.x, adds a scale(1) to the element,
@@ -23,10 +26,10 @@
 }
 
 .scroll.native {
-  @include touch-action(pan-y);
+  @include touch-action(pan);
 
   overflow-y:scroll;
-  overflow-x:hidden;
+  overflow-x:scroll;
   
   -webkit-overflow-scrolling:touch;
   -ms-overflow-style: -ms-autohiding-scrollbar;

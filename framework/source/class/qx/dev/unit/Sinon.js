@@ -3969,7 +3969,6 @@ if (typeof sinon == "undefined") {
         },
 
         respond: function respond(status, headers, body) {
-          console.log("respond", status)
             this.status = typeof status == "number" ? status : 200;
             this.statusText = FakeXMLHttpRequest.statusCodes[this.status];
             this.setResponseHeaders(headers || {});
@@ -4266,7 +4265,7 @@ sinon.fakeServer = (function () {
         respond: function respond() {
             if (arguments.length > 0) this.respondWith.apply(this, arguments);
             var queue = this.queue || [];
-            var requests = queue.splice(0);
+            var requests = queue.splice(0, queue.length);
             var request;
 
             while(request = requests.shift()) {

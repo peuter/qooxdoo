@@ -57,6 +57,7 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
     POINTER_TO_GESTURE_MAPPING : {
       pointerdown : "gesturebegin",
       pointerup : "gesturefinish",
+      pointercancel : "gesturefinish",
       pointermove : "gesturemove"
     },
 
@@ -229,7 +230,8 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
           Simulated MouseEvents are fired by browsers directly after TouchEvents
           for improving compatibility. They should not trigger PointerEvents.
         */
-        domEvent.preventDefault();
+        // TODO Please review this: http://bugzilla.qooxdoo.org/show_bug.cgi?id=8267
+        // domEvent.preventDefault();
         return;
       }
 
@@ -323,7 +325,7 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
         gestureEvent = new qx.event.type.dom.Pointer(
           qx.event.handler.PointerCore.POINTER_TO_GESTURE_MAPPING[type],
           domEvent);
-        gestureEvent = qx.module.event.Pointer.normalize(gestureEvent);
+        qx.event.type.dom.Pointer.normalize(gestureEvent);
         gestureEvent.srcElement = target;
       }
 

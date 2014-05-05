@@ -51,6 +51,7 @@ qx.Class.define("qx.event.handler.DragDrop",
 
     // Initialize track listener
     this.__manager.addListener(this.__root, "longtap", this._onLongtap, this, true);
+    this.__manager.addListener(this.__root, "trackstart", this._onTrackStart, this, true);
     this.__manager.addListener(this.__root, "track", this._onTrack, this, true);
     this.__manager.addListener(this.__root, "trackend", this._onTrackEnd, this, true);
 
@@ -99,7 +100,17 @@ qx.Class.define("qx.event.handler.DragDrop",
   },
 
 
-
+  properties : {
+    /**
+     * Widget instance of the drag & drop cursor. If non is given, the default
+     * {@link qx.ui.core.DragDropCursor} will be used.
+     */
+    cursor : {
+      check : "qx.ui.core.Widget",
+      nullable : true,
+      init : null
+    }
+  },
 
 
   /*
@@ -124,6 +135,7 @@ qx.Class.define("qx.event.handler.DragDrop",
     __validDrop : false,
     __validAction : false,
     __dragTargetWidget : null,
+    __startTargets : null,
 
 
     /*
@@ -455,6 +467,7 @@ qx.Class.define("qx.event.handler.DragDrop",
       // Clear init
       this.__dragTarget = null;
       this.__sessionActive = false;
+      this.__startTargets = null;
       this.__rebuildStructures();
     },
 
@@ -495,12 +508,12 @@ qx.Class.define("qx.event.handler.DragDrop",
         return;
       }
 
-      var dragable = this.__findDraggable(e.getTarget());
+      var dragable = this.__findDraggable(this.__startTargets.target);
       if (dragable) {
         // This is the source target
         this.__dragTarget = dragable;
 
-        var widgetOriginalTarget = qx.ui.core.Widget.getWidgetByElement(e.getOriginalTarget());
+        var widgetOriginalTarget = qx.ui.core.Widget.getWidgetByElement(this.__startTargets.original);
         while (widgetOriginalTarget && widgetOriginalTarget.isAnonymous()) {
           widgetOriginalTarget = widgetOriginalTarget.getLayoutParent();
         }
@@ -524,6 +537,17 @@ qx.Class.define("qx.event.handler.DragDrop",
 
 
     /**
+     * Event handler for the trackstart event which stores the initial targets.
+     * @param e {qx.event.type.Track} The track event.
+     */
+    _onTrackStart : function(e) {
+      if (e.isPrimary()) {
+        this.__startTargets = {target: e.getTarget(), original: e.getOriginalTarget()};
+      }
+    },
+
+
+    /**
      * Event handler for the track event which starts the session for mouse interactions and
      * is responsible for firing the drag, dragover and dragleave event.
      * @param e {qx.event.type.Track} The track event.
@@ -536,7 +560,12 @@ qx.Class.define("qx.event.handler.DragDrop",
 
       // start the drag session for mouse
       if (!this.__sessionActive && e.getPointerType() == "mouse") {
-        this._start(e);
+        var delta = e.getDelta();
+        // if the mouse moved a bit in any direction
+        var distance = qx.event.handler.GestureCore.TAP_MAX_DISTANCE.mouse;
+        if (delta.x > distance || delta.y > distance) {
+          this._start(e);
+        }
       }
 
       // check if the session has been activated
@@ -548,21 +577,32 @@ qx.Class.define("qx.event.handler.DragDrop",
         this.clearSession();
       }
 
-      // find current hovered dropable
+      // find current hovered droppable
       var doc = this.__manager.getWindow().document;
       var el = doc.elementFromPoint(e.getDocumentLeft(), e.getDocumentTop());
-      var cursor = qx.ui.core.DragDropCursor.getInstance();
+      var cursor = this.getCursor();
+      if (!cursor) {
+        cursor = qx.ui.core.DragDropCursor.getInstance();
+      }
       var cursorEl = cursor.getContentElement().getDomElement();
 
       if (el !== cursorEl) {
-        var dropable = this.__findDroppable(el);
-        if (dropable && dropable != this.__dropTarget) {
-          this.__validDrop = this.__fireEvent("dragover", dropable, this.__dragTarget, true, e);
-          this.__dropTarget = dropable;
+        var droppable = this.__findDroppable(el);
 
-          this.__detectAction();
-        } else if (!dropable && this.__dropTarget) {
-          this.__fireEvent("dragleave", this.__dropTarget, dropable, false, e);
+        // new drop target detected
+        if (droppable && droppable != this.__dropTarget) {
+          // fire dragleave for previous drop target
+          if (this.__dropTarget) {
+            this.__fireEvent("dragleave", this.__dropTarget, this.__dragTarget, false, e);
+          }
+
+          this.__validDrop = this.__fireEvent("dragover", droppable, this.__dragTarget, true, e);
+          this.__dropTarget = droppable;
+        }
+
+        // only previous drop target
+        else if (!droppable && this.__dropTarget) {
+          this.__fireEvent("dragleave", this.__dropTarget, this.__dragTarget, false, e);
           this.__dropTarget = null;
           this.__validDrop = false;
 

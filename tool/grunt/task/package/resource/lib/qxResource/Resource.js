@@ -17,9 +17,8 @@
 
 ***************************************************************************** */
 
-/**
- * Resource
- */
+// qooxdoo code isn't strict-compliant yet
+// 'use strict';
 
 //------------------------------------------------------------------------------
 // Requirements
@@ -40,6 +39,13 @@ q.Class.define("qxResource.Resource",
 {
   extend: qx.core.Object,
 
+  /**
+   * Represents a physical resource file.
+   *
+   * @constructs qxResource.Resource
+   * @param {string} relPath - rel path to resource
+   * @param {string} namespace - namespace the resource is associated with
+   */
   construct: function(relPath, namespace)
   {
     this.base(arguments);
@@ -47,11 +53,19 @@ q.Class.define("qxResource.Resource",
     this.__namespace = namespace;
   },
 
+  /** @lends qxResource.Resource.prototype */
   members:
   {
+    /** @type {string} */
     __relpath: null,
+    /** @type {string} */
     __namespace: null,
 
+    /**
+     * Stringifies the resource.
+     *
+     * @returns {Object} resMap - <code>{myRelPathToRes: 'myNamespace'}</code>
+     */
     stringify: function() {
       resEntry = {};
       resEntry[this.__relpath] = this.__namespace;

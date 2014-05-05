@@ -45,12 +45,6 @@ qx.Class.define("qx.ui.mobile.container.Scroll",
   extend : qx.ui.mobile.container.Composite,
 
 
-  /*
-  *****************************************************************************
-     CONSTRUCTOR
-  *****************************************************************************
-  */
-
   /**
   * @param scrollProperties {Object} A map with scroll properties which are passed to the scrolling container (may contain iScroll properties).
   */
@@ -63,12 +57,6 @@ qx.Class.define("qx.ui.mobile.container.Scroll",
     }
   },
 
-
-  /*
-  *****************************************************************************
-     EVENTS
-  *****************************************************************************
-  */
 
   events :
   {
@@ -89,6 +77,19 @@ qx.Class.define("qx.ui.mobile.container.Scroll",
     {
       refine : true,
       init : "scroll"
+    },
+
+
+    /**
+     * Delegation object which can have one or more functions defined by the
+     * {@link qx.ui.mobile.container.IScrollDelegate} interface.
+     *
+     * @internal
+     */
+    delegate :
+    {
+      init: null,
+      nullable: true
     }
   },
 
@@ -107,7 +108,7 @@ qx.Class.define("qx.ui.mobile.container.Scroll",
       var element = this.base(arguments);
       var scrollElement = this._createScrollElement();
       if (scrollElement) {
-        element.appendChild(scrollElement);
+        return scrollElement;
       }
 
       return element;
@@ -129,9 +130,7 @@ qx.Class.define("qx.ui.mobile.container.Scroll",
      * scrolling container.
      */
     refresh: function() {
-      if (qx.core.Environment.get("qx.mobile.nativescroll") == false) {
-        this._refresh();
-      }
+      this._refresh();
     },
 
 
@@ -186,6 +185,12 @@ qx.Class.define("qx.ui.mobile.container.Scroll",
 
       var parentWidth = this.getContainerElement().clientWidth;
       var contentWidth = this.getContentElement().scrollWidth;
+
+      var scrollContentElement = this._getScrollContentElement();
+      if(scrollContentElement) {
+        contentWidth = qx.bom.element.Dimension.getWidth(scrollContentElement);
+      }
+
       return parentWidth < contentWidth;
     },
 
@@ -201,6 +206,12 @@ qx.Class.define("qx.ui.mobile.container.Scroll",
 
       var parentHeight = this.getContainerElement().clientHeight;
       var contentHeight = this.getContentElement().scrollHeight;
+
+      var scrollContentElement = this._getScrollContentElement();
+      if(scrollContentElement) {
+        contentHeight = qx.bom.element.Dimension.getHeight(scrollContentElement);
+      }
+
       return parentHeight < contentHeight;
     },
 
@@ -235,7 +246,28 @@ qx.Class.define("qx.ui.mobile.container.Scroll",
         }
 
         var location = qx.bom.element.Location.getRelative(this._getContentElement(), element, "scroll", "scroll");
-        this._scrollTo(-location.left, -location.top, time);
+        var offset = this._getScrollOffset();
+
+        this._scrollTo(-location.left - offset[0], -location.top - offset[1], time);
+      }
+    },
+
+
+    /**
+     *
+     * Determines the scroll offset for the <code>_scrollToElement</code> method.
+     * If a delegate is available, the method calls 
+     * <code>qx.ui.mobile.container.IScrollDelegate.getScrollOffset()</code> for offset calculation.
+     *
+     * @return {Array} an array with x,y offset.
+     */
+    _getScrollOffset : function()
+    {
+      var delegate = this.getDelegate();
+      if (delegate != null && delegate.getScrollOffset) {
+        return delegate.getScrollOffset.bind(this)();
+      } else {
+        return [0,0];
       }
     },
 

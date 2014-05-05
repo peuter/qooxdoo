@@ -213,7 +213,7 @@ qx.Class.define("qx.ui.mobile.dialog.Menu",
      * @return {qx.ui.mobile.container.Scroll} the scroll container which contains the selectionList of this menu.
      */
     _createListScroller : function(selectionList) {
-      var listScroller = new qx.ui.mobile.container.Scroll();
+      var listScroller = new qx.ui.mobile.container.Scroll({"snap":".list-item"});
       listScroller.add(selectionList, {
         flex: 1
       });
@@ -370,7 +370,6 @@ qx.Class.define("qx.ui.mobile.dialog.Menu",
      * @param index {Integer}, the index of the listItem to which the listScroller should scroll to.
      */
     scrollToItem : function(index) {
-      var scrollY = 0;
       if (index !== null && this.__selectionList.getModel() != null) {
         var listItems = qxWeb("#"+this.__listScroller.getId()+ " .list-item");
         var targetListItemElement = listItems[index];
@@ -379,11 +378,6 @@ qx.Class.define("qx.ui.mobile.dialog.Menu",
     }
   },
 
-  /*
-  *****************************************************************************
-      DESTRUCTOR
-  *****************************************************************************
-  */
 
   destruct : function()
   {

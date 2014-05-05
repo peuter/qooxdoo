@@ -43,7 +43,7 @@ q.ready(function() {
       docTitle = "qx.Website " + version + " API Documentation";
     }
   }
-  q("h1").setHtml(title);
+  q("h1#headline").setHtml(title);
   document.title = docTitle;
 
   var icons = {
@@ -402,6 +402,16 @@ q.ready(function() {
     });
   };
 
+  var getItemParent = function(itemName) {
+    var parent = null;
+    var ns = itemName.split(".");
+    if (ns.length > 1) {
+      ns.pop();
+      parent = ns.join(".");
+    }
+    return parent;
+  };
+
 
   var renderMethod = function(method, prefix) {
     // add the name
@@ -411,7 +421,8 @@ q.ready(function() {
     data.module = Data.getModuleName(method.attributes.sourceClass);
 
     // add the description
-    data.desc = parse(Data.getByType(method, "desc").attributes.text) || "";
+    var parent = getItemParent(data.name);
+    data.desc = parse(Data.getByType(method, "desc").attributes.text || "", parent);
 
     // add link to overridden method
     if (data.desc == "" && method.attributes.docFrom) {
@@ -423,7 +434,7 @@ q.ready(function() {
     // add the return type
     var returnType = Data.getByType(method, "return");
     if (returnType) {
-      data.returns = {desc: parse(Data.getByType(returnType, "desc").attributes.text || "")};
+      data.returns = {desc: parse(Data.getByType(returnType, "desc").attributes.text || "", parent)};
       data.returns.types = [];
       Data.getByType(returnType, "types").children.forEach(function(item) {
         var type = item.attributes.type;
@@ -437,8 +448,11 @@ q.ready(function() {
     var params = Data.getByType(method, "params");
     for (var j=0; j < params.children.length; j++) {
       var param = params.children[j];
-      var paramData = {name: param.attributes.name};
-      paramData.desc = parse(Data.getByType(param, "desc").attributes.text || "");
+      var paramData = {
+        name: param.attributes.name,
+        optional: param.attributes.optional
+      };
+      paramData.desc = parse(Data.getByType(param, "desc").attributes.text || "", parent);
       if (param.attributes.defaultValue) {
         paramData.defaultValue = param.attributes.defaultValue;
       }
@@ -492,6 +506,9 @@ q.ready(function() {
     var params = "";
     for (var i = 0; i < this.params.length; i++) {
       params += this.params[i].name;
+      if (this.params[i].optional) {
+        params += "?";
+      }
       if (i < this.params.length - 1) {
         params += ", ";
       }
@@ -518,7 +535,9 @@ q.ready(function() {
       linkTarget = "#widget.set" + upperType;
     }
     module.append(q.create("<h2>" + upperType + " <a title='More information on " + type + "' class='info' href='" + linkTarget + "'>i</a></h2>"));
-    var desc = parse(data[type]);
+    var parent = data.fileName.split(".");
+    parent = parent.pop().toLowerCase();
+    var desc = parse(data[type], parent);
     module.append(q.create("<div>").setHtml(desc).addClass("widget-settings"));
   };
 
@@ -526,10 +545,17 @@ q.ready(function() {
   /**
    * PARSER
    */
-  var parse = function(text) {
+  var parse = function(text, parent) {
     if (!text) {
       return;
     }
+
+    if (!parent) {
+      parent = "";
+    }
+
+    // @links: internal (within module)
+    text = text.replace(/\{@link\s+#(.*?)\}/g, "<code><a href='#" + parent + ".$1'>" + parent + ".$1()</a></code>");
 
     // @links: methods
     text = text.replace(/\{@link .*?#(.*?)\}/g, "<code><a href='#.$1'>.$1()</a></code>");
@@ -617,45 +643,6 @@ q.ready(function() {
       window.onhashchange = highlightNavItem;
     }
   };
-
-  var fixLinks = true;
-  // replace links to qx classes with internal targets, e.g.
-  // #qx.bom.rest.Resource -> #Resource
-  var fixInternalLinks = q.func.debounce(function() {
-    q("a").forEach(function(lnk) {
-      var href = lnk.getAttribute("href");
-      if (href.indexOf("#qx") === 0) {
-        // target is a qx class
-        var target = href.substr(1);
-        var tmp = href.split(".");
-        href = "#" + tmp[tmp.length - 1];
-        lnk.setAttribute("href", href);
-        lnk.innerHTML = lnk.innerHTML.replace(target, href.substr(1));
-      } else if (href.indexOf("#") === 0) {
-        // relative method link (within module namespace)
-        var selector = href.replace(/\./g, "\\.").replace(/\$/g, "\\$");
-        if (q(selector).length === 0) {
-          lnk = q(lnk);
-          var redir;
-          var parentModule = lnk.getAncestors(".module");
-          parentModule.find(".method").forEach(function(meth) {
-            var methodName = meth.id.split(".");
-            methodName = methodName[methodName.length - 1];
-            if (methodName == href.substring(2)) {
-              redir = meth.id;
-            }
-          });
-
-          if (redir) {
-            lnk.setAttribute("href", "#" + redir);
-          } else {
-            // no redirect found
-            lnk.setAttribute("href", "");
-          }
-        }
-      }
-    });
-  }, 200);
 
   var highlightNavItem = function() {
     var hash = window.location.hash,
