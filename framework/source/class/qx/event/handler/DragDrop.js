@@ -21,7 +21,7 @@
 /**
  * Event handler, which supports drag events on DOM elements.
  *
- * @require(qx.event.handler.Pointer)
+ * @require(qx.event.handler.Gesture)
  * @require(qx.event.handler.Keyboard)
  * @require(qx.event.handler.Capture)
  */
@@ -50,10 +50,10 @@ qx.Class.define("qx.event.handler.DragDrop",
     this.__root = manager.getWindow().document.documentElement;
 
     // Initialize track listener
-    this.__manager.addListener(this.__root, "longtap", this._onLongtap, this, true);
-    this.__manager.addListener(this.__root, "trackstart", this._onTrackStart, this, true);
-    this.__manager.addListener(this.__root, "track", this._onTrack, this, true);
-    this.__manager.addListener(this.__root, "trackend", this._onTrackEnd, this, true);
+    this.__manager.addListener(this.__root, "longtap", this._onLongtap, this);
+    this.__manager.addListener(this.__root, "trackstart", this._onTrackStart, this);
+    this.__manager.addListener(this.__root, "track", this._onTrack, this);
+    this.__manager.addListener(this.__root, "trackend", this._onTrackEnd, this);
 
     qx.event.Registration.addListener(window, "blur", this._onWindowBlur, this);
 
@@ -136,6 +136,7 @@ qx.Class.define("qx.event.handler.DragDrop",
     __validAction : false,
     __dragTargetWidget : null,
     __startTargets : null,
+    __escaped : false,
 
 
     /*
@@ -508,7 +509,10 @@ qx.Class.define("qx.event.handler.DragDrop",
         return;
       }
 
-      var dragable = this.__findDraggable(this.__startTargets.target);
+      // start target can be none as the drag & drop handler might
+      // be created after the first start event
+      var target = this.__startTargets ? this.__startTargets.target : e.getTarget();
+      var dragable = this.__findDraggable(target);
       if (dragable) {
         // This is the source target
         this.__dragTarget = dragable;
@@ -555,6 +559,11 @@ qx.Class.define("qx.event.handler.DragDrop",
     _onTrack : function(e) {
       // only allow drag & drop for primary pointer
       if (!e.isPrimary()) {
+        return;
+      }
+
+      // ignore on escaped sessions
+      if (this.__escaped) {
         return;
       }
 
@@ -640,6 +649,7 @@ qx.Class.define("qx.event.handler.DragDrop",
 
       // Clean up
       this.clearSession();
+      this.__escaped = false;
     },
 
 
@@ -715,6 +725,7 @@ qx.Class.define("qx.event.handler.DragDrop",
       {
         case "Escape":
           this.clearSession();
+          this.__escaped = true;
       }
     }
   },

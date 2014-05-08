@@ -88,18 +88,19 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
     this.__eventNames = [];
     this.__buttonStates = [];
 
-    if (qx.core.Environment.get("event.mspointer")) {
-      var engineName = qx.core.Environment.get("engine.name");
-      var docMode = parseInt(qx.core.Environment.get("browser.documentmode"), 10);
-      if (engineName == "mshtml" && docMode == 10) {
-        this.__eventNames = ["MSPointerDown", "MSPointerMove", "MSPointerUp", "MSPointerCancel", "MSPointerOver", "MSPointerOut"];
-        this._initPointerObserver();
-      } else {
-        this.__nativePointerEvents = true;
-        this.__eventNames = ["pointerdown", "pointermove", "pointerup", "pointercancel", "pointerover", "pointerout"];
-        this._initPointerObserver();
-      }
+    var engineName = qx.core.Environment.get("engine.name");
+    var docMode = parseInt(qx.core.Environment.get("browser.documentmode"), 10);
+    if (engineName == "mshtml" && docMode == 10) {
+      this.__eventNames = ["MSPointerDown", "MSPointerMove", "MSPointerUp", "MSPointerCancel", "MSPointerOver", "MSPointerOut"];
+      this._initPointerObserver();
     } else {
+      if (qx.core.Environment.get("event.mspointer")) {
+        this.__nativePointerEvents = true;
+      }
+      this.__eventNames = ["pointerdown", "pointermove", "pointerup", "pointercancel", "pointerover", "pointerout"];
+      this._initPointerObserver();
+    }
+    if (!qx.core.Environment.get("event.mspointer")) {
       if (qx.core.Environment.get("device.touch")) {
         this.__eventNames = ["touchstart", "touchend", "touchmove", "touchcancel"];
         this._initObserver(this._onTouchEvent);
@@ -131,11 +132,20 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
     /**
      * Register native event listeners
      * @param callback {Function} listener callback
+     * @param useEmitter {Boolean} attach listener to Emitter instead of
+     * native event
      */
-    _initObserver : function(callback) {
+    _initObserver : function(callback, useEmitter) {
       this.__wrappedListener = qx.lang.Function.listener(callback, this);
       this.__eventNames.forEach(function(type) {
-        qx.bom.Event.addNativeListener(this.__defaultTarget, type, this.__wrappedListener);
+        if (useEmitter && qx.dom.Node.isDocument(this.__defaultTarget)) {
+          if (!this.__defaultTarget.$$emitter) {
+            this.__defaultTarget.$$emitter = new qx.event.Emitter();
+          }
+          this.__defaultTarget.$$emitter.on(type, this.__wrappedListener);
+        } else {
+          qx.bom.Event.addNativeListener(this.__defaultTarget, type, this.__wrappedListener);
+        }
       }.bind(this));
     },
 
@@ -144,14 +154,21 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
      * @param domEvent {Event}  Native DOM event
      */
     _onPointerEvent : function(domEvent) {
+      if (!qx.core.Environment.get("event.mspointer")) {
+        return;
+      }
       if (!this.__nativePointerEvents) {
         domEvent.stopPropagation();
       }
       var type = qx.event.handler.PointerCore.MSPOINTER_TO_POINTER_MAPPING[domEvent.type] || domEvent.type;
       var target = qx.bom.Event.getTarget(domEvent);
-      domEvent.type = type;
+      var domType = domEvent.type;
       var evt = new qx.event.type.dom.Pointer(type, domEvent);
       this._fireEvent(evt, type, target);
+      if (domType !== type && target.parentNode) {
+        evt = new qx.event.type.dom.Pointer(domType, domEvent);
+        this._fireEvent(evt, domType, target.parentNode);
+      }
     },
 
     /**
@@ -230,8 +247,7 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
           Simulated MouseEvents are fired by browsers directly after TouchEvents
           for improving compatibility. They should not trigger PointerEvents.
         */
-        // TODO Please review this: http://bugzilla.qooxdoo.org/show_bug.cgi?id=8267
-        // domEvent.preventDefault();
+        domEvent.preventDefault();
         return;
       }
 
@@ -249,7 +265,7 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
       var mouseProps = {pointerType : "mouse", pointerId: 1};
 
       // if the button state changes but not from or to zero
-      if (this.__lastButtonState != buttonsPressed && buttonsPressed != 0 && this.__lastButtonState != 0) {
+      if (this.__lastButtonState != buttonsPressed && buttonsPressed !== 0 && this.__lastButtonState !== 0) {
         var moveEvt = new qx.event.type.dom.Pointer("pointermove", domEvent, mouseProps);
         this._fireEvent(moveEvt, "pointermove", target);
       }

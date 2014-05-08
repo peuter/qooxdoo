@@ -91,6 +91,19 @@ qx.Class.define("qx.event.handler.Pointer",
     },
 
 
+    // overridden
+    _initPointerObserver : function() {
+      var useEmitter = false;
+      if (qx.core.Environment.get("engine.name") == "mshtml" &&
+        qx.core.Environment.get("browser.documentmode") < 9) {
+        // Workaround for bug #8293: Use an emitter to listen to the
+        // pointer events fired by a pointer handler attached by qxWeb.
+        useEmitter = true;
+      }
+      this._initObserver(this._onPointerEvent, useEmitter);
+    },
+
+
     /**
      * Fire a pointer event with the given parameters
      *
@@ -140,6 +153,17 @@ qx.Class.define("qx.event.handler.Pointer",
     // overridden
     _onPointerEvent : function(domEvent) {
       this._fireEvent(domEvent, domEvent.type, qx.bom.Event.getTarget(domEvent));
+    },
+
+
+    /**
+     * Handler for touch events
+     * @param domEvent {Event} Native DOM event
+     */
+    _onTouchEvent: function(domEvent) {
+      this.__callBase("_onTouchEvent", [domEvent]);
+      // prevent simulated mouse event including and native focus
+      domEvent.preventDefault();
     },
 
 
