@@ -30,17 +30,10 @@ qx.Class.define("qx.application.Mobile",
   include : qx.locale.MTranslation,
 
 
- /*
-  *****************************************************************************
-     CONSTRUCTOR
-  *****************************************************************************
-  */
-
   construct : function()
   {
     this.base(arguments);
   },
-
 
 
   /*
@@ -51,8 +44,17 @@ qx.Class.define("qx.application.Mobile",
 
   events :
   {
-    /** Fired when the method {@link qx.ui.mobile.page.Page#back} is called. Data indicating
-     *  whether the action was triggered by a key event or not.
+    /** Fired when the lifecycle method {@link #start} of any {@link qx.ui.mobile.page.Page page} is called */
+    "start" : "qx.event.type.Event",
+
+
+    /** Fired when the lifecycle method {@link #stop} of any {@link qx.ui.mobile.page.Page page} is called */
+    "stop" : "qx.event.type.Event",
+
+
+    /**
+     * Fired when the method {@link qx.ui.mobile.page.Page#back} is called. Data indicating
+     * whether the action was triggered by a key event or not.
      */
     "back" : "qx.event.type.Data",
 
@@ -68,15 +70,18 @@ qx.Class.define("qx.application.Mobile",
   *****************************************************************************
   */
 
+
   members :
   {
     __root : null,
+    __routing : null,
 
 
     // interface method
     main : function()
     {
       this.__root = this._createRootWidget();
+      this.__routing = this._createRouting();
 
       if (qx.core.Environment.get("qx.mobile.nativescroll") == false) {
         this.__root.setShowScrollbarY(false);
@@ -91,6 +96,35 @@ qx.Class.define("qx.application.Mobile",
      */
     getRoot : function() {
       return this.__root;
+    },
+
+
+    /**
+     * Returns the application's routing.
+     *
+     * @return {qx.application.Routing} The application's routing.
+     */
+    getRouting : function() {
+      return this.__routing;
+    },
+
+
+    /**
+     * Creates the application's routing. Override this function to create
+     * your own routing.
+     * @return {qx.application.Routing} the application's routing.
+     */
+    _createRouting : function() {
+      return new qx.application.Routing();
+    },
+
+
+    /**
+     * Default behaviour when a route matches. Displays the corresponding page on screen.
+     * @param data {Map} the animation properties
+     */
+    _show : function(data) {
+      this.show(data.customData);
     },
 
 
@@ -128,14 +162,8 @@ qx.Class.define("qx.application.Mobile",
   },
 
 
-  /*
-  *****************************************************************************
-     DESTRUCTOR
-  *****************************************************************************
-  */
-
   destruct : function()
   {
-    this.__root = null;
+    this.__root = this.__routing = null;
   }
 });
