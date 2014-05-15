@@ -71,7 +71,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
     this._add(this.__top, {row: 0, column: 0, colSpan: 2});
 
     // embed header into a scrollable container
-    this._headerClipper = new qx.ui.table.pane.Clipper();
+    this._headerClipper = this._createHeaderClipper();
     this._headerClipper.add(this.__header);
     this._headerClipper.addListener("losecapture", this._onChangeCaptureHeader, this);
     this._headerClipper.addListener("pointermove", this._onPointermoveHeader, this);
@@ -81,24 +81,24 @@ qx.Class.define("qx.ui.table.pane.Scroller",
     this.__top.add(this._headerClipper, {flex: 1});
 
     // embed pane into a scrollable container
-    this.__paneClipper = new qx.ui.table.pane.Clipper();
-    this.__paneClipper.add(this.__tablePane);
-    this.__paneClipper.addListener("roll", this._onRoll, this);
-    this.__paneClipper.addListener("pointermove", this._onPointermovePane, this);
-    this.__paneClipper.addListener("pointerdown", this._onPointerdownPane, this);
-    this.__paneClipper.addListener("tap", this._onTapPane, this);
-    this.__paneClipper.addListener("contextmenu", this._onContextMenu, this);
-    this.__paneClipper.addListener("dbltap", this._onDbltapPane, this);
-    this.__paneClipper.addListener("resize", this._onResizePane, this);
+    this._paneClipper = this._createPaneClipper();
+    this._paneClipper.add(this.__tablePane);
+    this._paneClipper.addListener("roll", this._onRoll, this);
+    this._paneClipper.addListener("pointermove", this._onPointermovePane, this);
+    this._paneClipper.addListener("pointerdown", this._onPointerdownPane, this);
+    this._paneClipper.addListener("tap", this._onTapPane, this);
+    this._paneClipper.addListener("contextmenu", this._onContextMenu, this);
+    this._paneClipper.addListener("dbltap", this._onDbltapPane, this);
+    this._paneClipper.addListener("resize", this._onResizePane, this);
 
     // if we have overlayed scroll bars, we should use a separate container
     if (qx.core.Environment.get("os.scrollBarOverlayed")) {
       this.__clipperContainer = new qx.ui.container.Composite();
       this.__clipperContainer.setLayout(new qx.ui.layout.Canvas());
-      this.__clipperContainer.add(this.__paneClipper, {edge: 0});
+      this.__clipperContainer.add(this._paneClipper, {edge: 0});
       this._add(this.__clipperContainer, {row: 1, column: 0});
     } else {
-      this._add(this.__paneClipper, {row: 1, column: 0});
+      this._add(this._paneClipper, {row: 1, column: 0});
     }
 
     // init scroll bars
@@ -379,7 +379,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
     __header : null,
     _headerClipper : null,
     __tablePane : null,
-    __paneClipper : null,
+    _paneClipper : null,
     __clipperContainer : null,
     __focusIndicator : null,
     __top : null,
@@ -444,7 +444,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
           control.setUserBounds(0, 0, 0, 0);
           control.setZIndex(1000);
           control.addListener("pointerup", this._onPointerupFocusIndicator, this);
-          this.__paneClipper.add(control);
+          this._paneClipper.add(control);
           control.show();             // must be active for editor to operate
           control.setDecorator(null); // it can be initially invisible, though.
           break;
@@ -453,7 +453,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
           control = new qx.ui.core.Widget();
           control.setUserBounds(0, 0, 0, 0);
           control.setZIndex(1000);
-          this.__paneClipper.add(control);
+          this._paneClipper.add(control);
           break;
 
         case "scrollbar-x":
@@ -577,6 +577,28 @@ qx.Class.define("qx.ui.table.pane.Scroller",
      */
     getTable : function() {
       return this.__table;
+    },
+
+
+    /**
+     * Creates and returns an instance of pane clipper.
+     *
+     * @return {qx.ui.table.pane.Clipper} pane clipper.
+     */
+    _createPaneClipper : function()
+    {
+      return new qx.ui.table.pane.Clipper();
+    },
+
+
+    /**
+     * Creates and returns an instance of header clipper.
+     *
+     * @return {qx.ui.table.pane.Clipper} pane clipper.
+     */
+    _createHeaderClipper : function()
+    {
+      return new qx.ui.table.pane.Clipper();
     },
 
 
@@ -714,7 +736,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
      */
     updateHorScrollBarMaximum : function()
     {
-      var paneSize = this.__paneClipper.getInnerSize();
+      var paneSize = this._paneClipper.getInnerSize();
       if (!paneSize) {
         // will be called on the next resize event again
         return;
@@ -748,7 +770,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
      */
     updateVerScrollBarMaximum : function()
     {
-      var paneSize = this.__paneClipper.getInnerSize();
+      var paneSize = this._paneClipper.getInnerSize();
       if (!paneSize) {
         // will be called on the next resize event again
         return;
@@ -825,7 +847,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
 
       this.fireDataEvent("changeScrollX", scrollLeft, e.getOldData());
       this._headerClipper.scrollToX(scrollLeft);
-      this.__paneClipper.scrollToX(scrollLeft);
+      this._paneClipper.scrollToX(scrollLeft);
     },
 
 
@@ -1591,7 +1613,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
       var resizeLine = this._showChildControl("resize-line");
 
       var width = resizeLine.getWidth();
-      var paneBounds = this.__paneClipper.getBounds();
+      var paneBounds = this._paneClipper.getBounds();
       resizeLine.setUserBounds(
         x - Math.round(width/2), 0, width, paneBounds.height
       );
@@ -1638,8 +1660,8 @@ qx.Class.define("qx.ui.table.pane.Scroller",
       }
 
       // Ensure targetX is visible
-      var scrollerLeft = this.__paneClipper.getContentLocation().left;
-      var scrollerWidth = this.__paneClipper.getBounds().width;
+      var scrollerLeft = this._paneClipper.getContentLocation().left;
+      var scrollerWidth = this._paneClipper.getBounds().width;
       var scrollX = scrollerLeft - paneLeft;
 
       // NOTE: +2/-1 because of feedback width
@@ -1734,7 +1756,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
 
       if (xPos != -1)
       {
-        var clipperSize = this.__paneClipper.getInnerSize();
+        var clipperSize = this._paneClipper.getInnerSize();
         if (!clipperSize) {
           return;
         }
@@ -2168,7 +2190,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
         + horScrollBar.getMarginTop() + horScrollBar.getMarginBottom();
 
       // Get the width and height of the view (without scroll bars)
-      var clipperSize = this.__paneClipper.getInnerSize();
+      var clipperSize = this._paneClipper.getInnerSize();
       var viewWidth = clipperSize ? clipperSize.width : 0;
 
       if (this.getVerticalScrollBarVisible()) {
@@ -2222,7 +2244,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
      */
     getPaneClipper : function()
     {
-      return this.__paneClipper;
+      return this._paneClipper;
     },
 
 
@@ -2301,7 +2323,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
      */
     _updateContent : function()
     {
-      var paneSize = this.__paneClipper.getInnerSize();
+      var paneSize = this._paneClipper.getInnerSize();
       if (!paneSize) {
         return;
       }
@@ -2336,12 +2358,12 @@ qx.Class.define("qx.ui.table.pane.Scroller",
         this._updateFocusIndicator();
       }
 
-      this.__paneClipper.scrollToX(scrollX);
+      this._paneClipper.scrollToX(scrollX);
 
       // Avoid expensive calls to setScrollTop if
       // scrolling is not needed
       if (! firstVisibleRowComplete ) {
-        this.__paneClipper.scrollToY(paneOffset);
+        this._paneClipper.scrollToY(paneOffset);
       }
     },
 
@@ -2383,7 +2405,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
 
     this.__lastPointerDownCell = this.__topRightWidget = this.__table = null;
     this._disposeObjects("__horScrollBar", "__verScrollBar",
-                         "_headerClipper", "__paneClipper", "__focusIndicator",
+                         "_headerClipper", "_paneClipper", "__focusIndicator",
                          "__header", "__tablePane", "__top", "__timer",
                          "__clipperContainer");
   }

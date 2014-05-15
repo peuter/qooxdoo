@@ -3,7 +3,7 @@
   'use strict';
 
   // core libraries
-  var fs = require('fs');
+  var fs = require('graceful-fs');
   var util = require('util');
 
   // 3rd party packages
@@ -43,6 +43,10 @@
   };
 
   var DataGenerator = function (config) {
+    if (config.verbose) {
+      console.log('Current config %s', JSON.stringify(config));
+    }
+
     this.config = config;
     this.demos = [];
     this.entries = [];
@@ -56,25 +60,41 @@
     catchEntries: function (done) {
       var dataGenerator = this;
 
-      walker(this.config.demoPath)
+      var demoPath = this.config.demoPath;
+      if (demoPath.substr(-1) === path.sep) {
+        demoPath = demoPath.substr(0, demoPath.length - 1);
+      }
+      demoPath += path.sep;
+
+      console.log('Catch entries in %s', demoPath);
+
+      walker(demoPath)
         .on('file', function (entry, stat) {
-          var path = entry.replace(dataGenerator.config.demoPath, '');
+          if (dataGenerator.config.verbose) {
+            console.log('read file %s (total amount (%s)', entry, dataGenerator.entries.length);
+          }
+
+          var filePath = entry.replace(demoPath, '');
           dataGenerator.entries.push({
             entry: entry,
-            path: path,
-            level: path.split('/').length,
+            path: filePath,
+            level: filePath.split(path.sep).length,
             type: 'file',
             stat: stat
           });
         })
         .on('dir', function (entry, stat) {
-          var path = entry.replace(dataGenerator.config.demoPath, '');
+          if (dataGenerator.config.verbose) {
+            console.log('read directory %s (total amount (%s)', entry, dataGenerator.entries.length);
+          }
+
+          var directoryPath = entry.replace(demoPath, '');
           // avoid empty entries
-          if (path.length > 0) {
+          if (directoryPath.length > 0) {
             dataGenerator.entries.push({
               entry: entry,
-              path: path,
-              level: path.split('/').length,
+              path: directoryPath,
+              level: directoryPath.split(path.sep).length,
               type: 'dir',
               stat: stat
             });
@@ -82,6 +102,7 @@
 
         })
         .on('end', function () {
+          console.log('%s entries (files and directories) catched', dataGenerator.entries.length);
           done(null, dataGenerator.entries);
         });
     },
@@ -111,6 +132,9 @@
       directories.forEach(function (directory) {
         // add only directories at first level to ignore sub-folders at 2nd level like data
         if (directory.level === 1) {
+          if (dataGenerator.config.verbose) {
+            console.log('Demo "%s" added to data generator', directory.path);
+          }
           dataGenerator.addDemo(directory.path);
         }
       });
@@ -144,6 +168,9 @@
             // get the tags and class name from javascript file
             dataGenerator.getTagsFromJsFile(jsFilePath, function (err, tags) {
               var filePathParts = file.path.split('/');
+              if (dataGenerator.config.verbose) {
+                console.log('Demo test "%s" added to data generator', file.path);
+              }
               dataGenerator.addDemoTest(
                 filePathParts[0],
                 filePathParts[1],
@@ -177,12 +204,10 @@
      */
     convertHtmlFilePathToJsFilePath: function (filePath) {
       // get the equivalent js file
-      var jsFilePath = path.join(
+      return path.join(
         this.config.jsSourcePath,
         filePath.replace('.html', '.js')
       );
-
-      return jsFilePath;
     },
 
     /**
@@ -202,11 +227,11 @@
         {
           path: 'tool/default.json'
         }
-      ]
+      ];
       data['jobs'] = {};
       data['config-warnings'] = {
         'job-shadowing': shadowedJobs
-      }
+      };
 
       var files = this.getFiles('.html');
       files.forEach(function (file) {
@@ -222,11 +247,15 @@
 
         // build classname (category.name)
         var className = [demoCategory.category, demoCategory.name].join('.');
-        source.push('source-' + className);
-        build.push('build-' + className);
 
-        var jobSection = dataGenerator.createJobSection(demoCategory);
-        data['jobs'] = dataGenerator.mergeJobs(data['jobs'], jobSection);
+        if (dataGenerator.isValidDemoCategory(demoCategory)) {
+          source.push('source-' + className);
+          build.push('build-' + className);
+
+          var jobSection = dataGenerator.createJobSection(demoCategory);
+          data['jobs'] = dataGenerator.mergeJobs(data['jobs'], jobSection);
+        }
+
       });
 
       data['jobs']['source'] = {
@@ -237,12 +266,17 @@
       };
 
       var demoConfigJsonFile = dataGenerator.config.demoConfigJsonFile;
-      dataGenerator.saveAsJsonFile(demoConfigJsonFile, data, function (err) {
-        if (err) {
-          return done(err);
-        }
-        done();
-      });
+      dataGenerator.saveAsJsonFile(demoConfigJsonFile, data, done);
+    },
+
+    /**
+     * Checks if the given demo category is valid regarding naming
+     *
+     * @param demoCategory
+     * @returns {boolean}
+     */
+    isValidDemoCategory: function (demoCategory) {
+      return ['data', 'blank', 'undefined'].indexOf(demoCategory.name) <= -1;
     },
 
     /**
@@ -271,32 +305,50 @@
       var dataGenerator = this;
 
       var files = this.getFiles('.html');
+      var fileCounter = 0;
       files.forEach(function (file) {
         if (file.level === 2) {
           var demoCategory = dataGenerator.getDemoCategoryFromFile(file.path);
-          var className = util.format(
-            'demobrowser/demo/%s/%s',
+          var className = path.join(
+            'demobrowser',
+            'demo',
             demoCategory.category,
             demoCategory.name
           );
 
-          if (!fs.existsSync('source/script')) {
-            fs.mkdirSync('source/script');
+          if (!fs.existsSync(path.join('source', 'script'))) {
+            fs.mkdirSync(path.join('source', 'script'));
           }
 
-          dataGenerator.copyJsFile(
-            util.format('%s/%s.js', dataGenerator.config.classPath, className),
-            util.format(
-              'source/script/demobrowser.demo.%s.%s.js',
-              demoCategory.category,
-              demoCategory.name
-            ),
-            function (err, done) {
-              if (err) {
-                console.error(err);
+          var jsFilePath = path.join(dataGenerator.config.classPath, className + '.js');
+
+          if (fs.existsSync(jsFilePath)) {
+            fileCounter += 1;
+            dataGenerator.copyJsFile(
+              jsFilePath,
+              path.join(
+                'source',
+                'script',
+                util.format(
+                  'demobrowser.demo.%s.%s.js',
+                  demoCategory.category,
+                  demoCategory.name
+                )
+              ),
+              function (err) {
+                if (err) {
+                  console.error(err);
+                }
+                fileCounter -= 1;
+
+                // Are all file are copied
+                if (fileCounter === 0) {
+                  done(null);
+                }
               }
-            }
-          );
+            );
+          }
+
         }
       });
     },
@@ -309,15 +361,23 @@
      * @param {function} done
      */
     copyJsFile: function (sourcePath, targetPath, done) {
+      var dataGenerator = this;
+
       var readStream = fs.createReadStream(sourcePath);
       readStream.on("error", function (err) {
         done(err);
       });
       var writeStream = fs.createWriteStream(targetPath);
       writeStream.on("error", function (err) {
+        if (dataGenerator.config.verbose) {
+          console.log('[ERR] %s doesn\'t copied to %s', sourcePath, targetPath);
+        }
         done(err);
       });
-      writeStream.on("close", function (ex) {
+      writeStream.on("close", function () {
+        if (dataGenerator.config.verbose) {
+          console.log('%s copied to %s', sourcePath, targetPath);
+        }
         done();
       });
       readStream.pipe(writeStream);
@@ -387,7 +447,7 @@
           }
         });
 
-        done(null, tags);
+        return done(null, tags);
       });
     },
 
@@ -403,7 +463,9 @@
     /**
      * Save the internal data to a json file
      *
-     * @param {string} fileName
+     * @param fileName
+     * @param content
+     * @param done
      */
     saveAsJsonFile: function (fileName, content, done) {
       var data = JSON.stringify(content, null, 4);
@@ -411,10 +473,10 @@
         if (err) {
           console.error(err);
         } else {
+          console.log(fileName + ' created');
           if (done !== null && typeof done === 'function') {
-            done(err);
+            done(null);
           }
-
         }
       });
     },
@@ -429,11 +491,10 @@
       var fileName = filePath.replace(this.config.demoPath, '');
       var fileNameParts = fileName.split('/');
 
-      var demoCategory = {
+      return {
         category: fileNameParts[0],
         name: path.basename(fileNameParts[1], '.html')
       };
-      return demoCategory;
     },
 
     /**
@@ -451,14 +512,13 @@
      * @returns {Array}
      */
     getFiles: function (nameFilter) {
-      var files = this.entries.filter(function (file) {
+      return this.entries.filter(function (file) {
         var include = file.type === 'file';
         if (include && nameFilter !== undefined) {
           include = file.entry.indexOf(nameFilter) > 0;
         }
         return include;
       });
-      return files;
     },
 
     /**
@@ -467,14 +527,13 @@
      * @returns {Array}
      */
     getDirectories: function (nameFilter) {
-      var directories = this.entries.filter(function (directory) {
+      return this.entries.filter(function (directory) {
         var include = directory.type === 'dir';
         if (include && nameFilter !== undefined) {
           include = directory.entry.indexOf(nameFilter) > 0;
         }
         return include;
       });
-      return directories;
     },
 
     /**
@@ -486,7 +545,9 @@
      */
     mergeJobs: function (existingJobs, newJobs) {
       for (var key in newJobs) {
-        existingJobs[key] = newJobs[key];
+        if (newJobs.hasOwnProperty(key)) {
+          existingJobs[key] = newJobs[key];
+        }
       }
       return existingJobs;
     }
