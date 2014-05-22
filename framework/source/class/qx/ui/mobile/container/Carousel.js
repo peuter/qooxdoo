@@ -252,11 +252,14 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
 
     // overridden
     removeAll : function() {
+      var removedPages = [];
+
       if (this.__pages) {
         for (var i = this.__pages.length - 1; i >= 0; i--) {
-          this.removePageByIndex(i);
+          removedPages.push(this.removePageByIndex(i));
         }
       }
+      return removedPages;
     },
 
 
@@ -726,10 +729,11 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
 
   destruct : function()
   {
-    this.removeAll();
     this._removeListeners();
 
     this._disposeObjects("__carouselScroller"," __pagination");
+
+    qx.util.DisposeUtil.destroyContainer(this);
     qx.util.DisposeUtil.disposeArray(this,"__paginationLabels");
 
     this.__pages = this.__paginationLabels = this.__snapPointsX = this.__onMoveOffset = this.__lastOffset = this.__boundsX = this.__isPageScrollTarget = null;
