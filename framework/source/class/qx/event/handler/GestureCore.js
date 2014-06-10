@@ -29,9 +29,9 @@ qx.Bootstrap.define("qx.event.handler.GestureCore", {
 
     TYPES : ["tap", "swipe", "longtap", "dbltap", "track", "trackstart", "trackend", "rotate", "pinch", "roll"],
 
-    GESTURE_EVENTS : ["gesturebegin", "gesturefinish", "gesturemove"],
+    GESTURE_EVENTS : ["gesturebegin", "gesturefinish", "gesturemove", "gesturecancel"],
 
-    TAP_MAX_DISTANCE : {"touch": 40, "mouse": 10, "pen": 20}, // values are educated guesses
+    TAP_MAX_DISTANCE : {"touch": 40, "mouse": 50, "pen": 20}, // values are educated guesses
 
     /** @type {Map} The direction of a swipe relative to the axis */
     SWIPE_DIRECTION :
@@ -155,6 +155,8 @@ qx.Bootstrap.define("qx.event.handler.GestureCore", {
         this.gestureMove(domEvent, target);
       } else if (type == "gesturefinish") {
         this.gestureFinish(domEvent, target);
+      } else if (type == "gesturecancel") {
+        this.gestureCancel(domEvent.pointerId);
       }
     },
 
@@ -354,7 +356,7 @@ qx.Bootstrap.define("qx.event.handler.GestureCore", {
      * Cancels the gesture if running.
      * @param id {Number} The pointer Id.
      */
-    cancelGesture : function(id) {
+    gestureCancel : function(id) {
       if (this.__gesture[id]) {
         this.__stopLongTapTimer(this.__gesture[id]);
         delete this.__gesture[id];
@@ -373,7 +375,7 @@ qx.Bootstrap.define("qx.event.handler.GestureCore", {
     __handleRollImpulse : function(deltaX, deltaY, domEvent, target, time) {
       var oldTimeoutId = domEvent.timeoutId;
       // do nothing if we don't need to scroll
-      if ((Math.abs(deltaY) < 0.1 && Math.abs(deltaX) < 0.1) || this.__stopMomentum[oldTimeoutId]) {
+      if ((Math.abs(deltaY) < 1 && Math.abs(deltaX) < 1) || this.__stopMomentum[oldTimeoutId]) {
         delete this.__stopMomentum[oldTimeoutId];
         return;
       }
@@ -459,31 +461,6 @@ qx.Bootstrap.define("qx.event.handler.GestureCore", {
 
 
     /**
-     * Calculates the velocity for the swipe gesture.
-     * @param gesture {Map} description.
-     * @param distance {Number} distance of the gesture.
-     * @param duration {Number} duration of the gesture.
-     * @param axis {String} "x"/"y".
-     * @param pointerType {String} "mouse","touch","pen".
-     * @return {Number} The velocity
-     */
-    _calcVelocity : function(gesture, distance, duration, axis, pointerType) {
-      var velocity = 0;
-      if (pointerType == "touch") {
-        if (axis == "x") {
-          velocity = gesture.velocityX;
-        } else {
-          velocity = gesture.velocityY;
-        }
-        velocity = velocity / (new Date().getTime() - gesture.lastEventTime);
-      } else {
-        velocity = (duration !== 0) ? distance / duration : 0;
-      }
-      return velocity;
-    },
-
-
-    /**
      * Checks if the distance between the x/y coordinates of DOM event
      * exceeds TAP_MAX_DISTANCE and returns the result.
      *
@@ -492,13 +469,13 @@ qx.Bootstrap.define("qx.event.handler.GestureCore", {
      */
     _isBelowTapMaxDistance: function(domEvent) {
       var delta = this._getDeltaCoordinates(domEvent);
+      var maxDistance = qx.event.handler.GestureCore.TAP_MAX_DISTANCE[domEvent.getPointerType()];
       if (!delta) {
         return null;
       }
-      var clazz = qx.event.handler.GestureCore;
 
-      return (Math.abs(delta.x) <= clazz.TAP_MAX_DISTANCE[domEvent.pointerType] &&
-              Math.abs(delta.y) <= clazz.TAP_MAX_DISTANCE[domEvent.pointerType]);
+      return (Math.abs(delta.x) <= maxDistance &&
+              Math.abs(delta.y) <= maxDistance);
     },
 
 

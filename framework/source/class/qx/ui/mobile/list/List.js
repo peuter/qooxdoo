@@ -85,7 +85,6 @@ qx.Class.define("qx.ui.mobile.list.List",
     this.addListener("trackstart", this._onTrackStart, this);
     this.addListener("track", this._onTrack, this);
     this.addListener("trackend", this._onTrackEnd, this);
-    this.addListener("roll", this._onRoll, this);
 
     if (delegate) {
       this.setDelegate(delegate);
@@ -231,9 +230,6 @@ qx.Class.define("qx.ui.mobile.list.List",
           qx.bom.element.Class.has(element, "removable")) {
         this.__trackElement = element;
 
-        qx.bom.element.Style.set(element, "transform", "translateX(0)");
-        qx.bom.element.Style.set(element, "opacity", "1");
-
         this.__minDeleteDistance = qx.bom.element.Dimension.getWidth(element) / 2;
         qx.bom.element.Class.add(element, "track");
       }
@@ -264,10 +260,10 @@ qx.Class.define("qx.ui.mobile.list.List",
       var opacity = 1 - (Math.abs(deltaX) / this.__minDeleteDistance);
       opacity = Math.round(opacity * 100) / 100;
 
-      qx.bom.AnimationFrame.request(function() {
-        qx.bom.element.Style.set(element, "transform", "translateX(" + deltaX + "px)");
-        qx.bom.element.Style.set(element, "opacity", opacity);
-      }.bind(this));
+      qx.bom.element.Style.set(element, "transform", "translate3d(" + deltaX + "px,0,0)");
+      qx.bom.element.Style.set(element, "opacity", opacity);
+
+      evt.preventDefault();
     },
 
 
@@ -276,32 +272,20 @@ qx.Class.define("qx.ui.mobile.list.List",
     * @param evt {qx.event.type.Track} the <code>trackend</code> event
     */
     _onTrackEnd : function(evt) {
-       if (!this.__trackElement) {
+      if (!this.__trackElement) {
         return;
       }
       var element = this.__trackElement;
-      
+
       if (Math.abs(evt.getDelta().x) > this.__minDeleteDistance) {
         var row = parseInt(element.getAttribute("data-row"), 10);
         this.fireDataEvent("removeItem", row);
-      }
-
-      qx.bom.AnimationFrame.request(function() {
-        qx.bom.element.Style.set(element, "transform", "translateX(0)");
-        qx.bom.element.Style.set(element, "opacity", "1");
-        qx.bom.element.Class.remove(element, "track");
-      }.bind(this));
-    },
-
-
-    /**
-    * Event handler for <code>touchmove</code> event.
-    * @param evt {Event} the <code>touchmove</code> event
-    */
-    _onRoll : function(evt) {
-      if(this.__isScrollingBlocked) {
-        evt.preventDefault();
-        evt.stopPropagation();
+      } else {
+        qx.bom.AnimationFrame.request(function() {
+          qx.bom.element.Style.set(element, "transform", "translate3d(0,0,0)");
+          qx.bom.element.Style.set(element, "opacity", "1");
+          qx.bom.element.Class.remove(element, "track");
+        }.bind(this));
       }
     },
 

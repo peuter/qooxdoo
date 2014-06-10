@@ -28,6 +28,9 @@ qx.Mixin.define("qx.ui.core.scroll.MRoll",
 {
   members :
   {
+    __cancelRoll : null,
+
+
     /**
      * Responsible for adding the event listener needed for scroll handling.
      */
@@ -71,7 +74,7 @@ qx.Mixin.define("qx.ui.core.scroll.MRoll",
       if (this.__cancelRoll && e.getMomentum()) {
         qx.event.Registration.getManager(e.getOriginalTarget())
           .getHandler(qx.event.handler.Gesture)
-          .cancelGesture(this.__cancelRoll);
+          .gestureCancel(this.__cancelRoll);
 
         e.stopMomentum();
         this.__cancelRoll = null;

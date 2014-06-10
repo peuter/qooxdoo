@@ -22,6 +22,9 @@
  */
 q.ready(function() {
 
+  var legacyIe = (q.env.get("engine.name") === "mshtml" &&
+    q.env.get("engine.version") < 11);
+
   // prevent touch scrolling
   q(document).on("touchmove", function(e) {
     e.preventDefault();
@@ -29,6 +32,21 @@ q.ready(function() {
 
   // remove the warning
   q("#warning").setStyle("display", "none");
+
+  if (legacyIe) {
+    var loading = q.create("<div class='loading'>loading...</div>").appendTo(document.body);
+    var width = Math.round(q(document).getWidth() / 2);
+    var height = Math.round(q(document).getHeight() / 2);
+    var left = width - (Math.round(loading.getWidth() / 2));
+    var top = height - (Math.round(loading.getHeight() / 2));
+    var zIndex = 10000;
+    loading.setStyles({
+      top: top + "px",
+      left: left + "px",
+      zIndex: zIndex + 10
+    });
+    q(document).block("black", 0.8, zIndex);
+  }
 
   var title, docTitle;
   var customTitle = q.$$qx.core.Environment.get("apiviewer.title");
@@ -85,7 +103,7 @@ q.ready(function() {
       q("#list .qx-accordion-page ul").show();
       q("#list .qx-accordion-page li").show();
       q("#list .qx-accordion-page > a").show();
-      q("#list .qx-accordion-button").removeClass("no-matches"); // allow click on every group button
+      q("#list .qx-accordion-button").removeClass("no-matches").setAttribute("disabled", false); // allow click on every group button
       q("#list").render();
       return;
     }
@@ -104,7 +122,7 @@ q.ready(function() {
     q("#list .qx-accordion-page > a").hide(); // module headers
     q("#list .qx-accordion-page ul").hide(); // method lists
     q("#list .qx-accordion-page li").hide(); // method items
-    q("#list .qx-accordion-button").removeClass("no-matches"); // allow click on every group button
+    q("#list .qx-accordion-button").removeClass("no-matches").setAttribute("disabled", false); // allow click on every group button
     var regEx = new RegExp(query, "i");
 
     q("#list .qx-accordion-button").forEach(function(groupButton) {
@@ -128,7 +146,7 @@ q.ready(function() {
         groupButton.setAttribute("data-results", groupResults);
       }
       if (groupResults == 0) {
-        groupButton.addClass("no-matches");
+        groupButton.addClass("no-matches").setAttribute("disabled", true);
       }
     });
 
@@ -598,50 +616,53 @@ q.ready(function() {
   var useHighlighter = !(q.env.get("engine.name") == "mshtml" && q.env.get("browser.documentmode") < 9);
 
   var onContentReady = function() {
-    var listRendered = q("#list").find("> ul > li").length > 0;
-    if (!listRendered) {
-      renderList(this);
-      sortList();
-      renderContent(this);
-      loadSamples();
-      var acc = q("#list").accordion();
+    renderList(this);
+    sortList();
+    renderContent(this);
+    loadSamples();
+    var acc = q("#list").accordion();
 
-      // wait for the accordion pages to be measured
-      var buttonTops;
-      var listOffset = q("#list").getPosition().top;
-      setTimeout(function() {
-        acc.fadeIn(200);
-        buttonTops = [];
-        acc.find(".qx-accordion-button").forEach(function(button, index) {
-          buttonTops[index] = (q(button).getPosition().top);
-        });
-      }, 200);
+    // wait for the accordion pages to be measured
+    var buttonTops;
+    var listOffset = q("#list").getPosition().top;
 
-
-      acc.on("changeSelected", function(index) {
-        var buttonTop = buttonTops[index] - listOffset;
-        var scrollTop = q("#navContainer").getProperty("scrollTop");
-        q("#navContainer").animate({
-          duration: 500,
-          keep: 100,
-          timing: "linear",
-          keyFrames: {
-            0: {scrollTop: scrollTop},
-            100: {scrollTop: buttonTop}
-          }
-        });
+    setTimeout(function() {
+      acc.fadeIn(200);
+      buttonTops = [];
+      acc.find(".qx-accordion-button").forEach(function(button, index) {
+        buttonTops[index] = (q(button).getPosition().top);
       });
-    } else {
-      // enable syntax highlighting
-      if (useHighlighter) {
-        q('pre').forEach(function(el) {hljs.highlightBlock(el);});
-      }
+    }, 200);
 
-      fixInternalLinks();
-      if (q(".filter input").getValue()) {
-        setTimeout(onFilterInput, 200);
-      }
-      window.onhashchange = highlightNavItem;
+    acc.on("changeSelected", function(index) {
+      var buttonTop = buttonTops[index] - listOffset;
+      var scrollTop = q("#navContainer").getProperty("scrollTop");
+      q("#navContainer").animate({
+        duration: 500,
+        keep: 100,
+        timing: "linear",
+        keyFrames: {
+          0: {scrollTop: scrollTop},
+          100: {scrollTop: buttonTop}
+        }
+      });
+    });
+
+    // enable syntax highlighting
+    if (useHighlighter) {
+      q('pre').forEach(function(el) {hljs.highlightBlock(el);});
+    }
+
+    if (q(".filter input").getValue()) {
+      setTimeout(onFilterInput, 200);
+    }
+    window.onhashchange = highlightNavItem;
+
+    if (legacyIe) {
+      setTimeout(function() {
+        q(".loading").remove();
+        q(document).unblock();
+      }, 1000);
     }
   };
 
@@ -890,7 +911,6 @@ q.ready(function() {
       pageId: "widget-dom-" + methodName.replace(".", "")
     })
     .insertAfter(markupHeader);
-    //markupHeader.remove();
     var pre = accordion.find("pre").append(codeEl);
     accordion.accordion();
 

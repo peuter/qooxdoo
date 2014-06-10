@@ -54,7 +54,6 @@ qx.Class.define("qx.ui.mobile.tabbar.TabBar",
     this.base(arguments);
     this._setLayout(new qx.ui.mobile.layout.HBox());
     this.addListener("tap", this._onTap, this);
-    this.addListener("touchstart", qx.bom.Event.preventDefault, this);
   },
 
 
@@ -105,10 +104,23 @@ qx.Class.define("qx.ui.mobile.tabbar.TabBar",
      *
      * @param evt {qx.event.type.Tap} The event object
      */
-    _onTap : function(evt)
-    {
+    _onTap: function(evt) {
       var target = evt.getTarget();
-      if (target instanceof qx.ui.mobile.tabbar.TabButton) {
+
+      while (!(target instanceof qx.ui.mobile.tabbar.TabButton)) {
+        if (target.getLayoutParent) {
+          var layoutParent = target.getLayoutParent();
+          if (layoutParent == null || layoutParent instanceof qx.ui.mobile.tabbar.TabBar) {
+            target = null;
+            break;
+          }
+          target = layoutParent;
+        } else {
+          target = null;
+          break;
+        }
+      }
+      if (target !== null) {
         this.setSelection(target);
       }
     },
@@ -179,6 +191,5 @@ qx.Class.define("qx.ui.mobile.tabbar.TabBar",
   destruct : function()
   {
     this.removeListener("tap", this._onTap, this);
-    this.removeListener("touchstart", qx.bom.Event.preventDefault, this);
   }
 });

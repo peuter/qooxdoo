@@ -9,6 +9,7 @@
   // 3rd party packages
   var path = require('path');
   var walker = require('walker');
+  var mkdirp = require('mkdirp');
 
   // global vars
   var jobSectionTemplate = {
@@ -183,12 +184,10 @@
                 // save json file with all demos
                 var demoDataJsonFile = dataGenerator.config.demoDataJsonFile;
                 var dirName = path.dirname(demoDataJsonFile);
-                if (!fs.existsSync(dirName)) {
-                  fs.mkdirSync(dirName);
-                }
-
-                dataGenerator.saveAsJsonFile(demoDataJsonFile, dataGenerator.getDemos());
-                done(null);
+                mkdirp(dirName, function () {
+                  dataGenerator.saveAsJsonFile(demoDataJsonFile, dataGenerator.getDemos());
+                  done(null);
+                });
               }
             });
           }
@@ -308,6 +307,7 @@
       var fileCounter = 0;
       files.forEach(function (file) {
         if (file.level === 2) {
+          var demoDataJsonFilePath = path.dirname(dataGenerator.config.demoDataJsonFile);
           var demoCategory = dataGenerator.getDemoCategoryFromFile(file.path);
           var className = path.join(
             'demobrowser',
@@ -316,8 +316,8 @@
             demoCategory.name
           );
 
-          if (!fs.existsSync(path.join('source', 'script'))) {
-            fs.mkdirSync(path.join('source', 'script'));
+          if (!fs.existsSync(demoDataJsonFilePath)) {
+            fs.mkdirSync(demoDataJsonFilePath);
           }
 
           var jsFilePath = path.join(dataGenerator.config.classPath, className + '.js');
@@ -327,10 +327,9 @@
             dataGenerator.copyJsFile(
               jsFilePath,
               path.join(
-                'source',
-                'script',
+                demoDataJsonFilePath,
                 util.format(
-                  'demobrowser.demo.%s.%s.js',
+                  'demobrowser.demo.%s.%s.src.js',
                   demoCategory.category,
                   demoCategory.name
                 )

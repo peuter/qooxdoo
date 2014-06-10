@@ -102,7 +102,13 @@ qx.Class.define("qx.ui.mobile.page.Manager",
       this.__masterNavigation.getLayout().setShowAnimation(false);
       this.__detailNavigation.getLayout().setShowAnimation(false);
 
-      this._onLayoutChange();
+      this.__masterContainer.forceHide();
+      
+      setTimeout(function() {
+        if (qx.bom.Viewport.isLandscape()) {
+          this.__masterContainer.show();
+        }
+      }.bind(this), 300);
     } else {
       root.add(this.__detailNavigation, {flex:1});
     }
@@ -184,7 +190,7 @@ qx.Class.define("qx.ui.mobile.page.Manager",
 
     /**
      * @deprecated {3.5} The method 'setMasterContainerHidden()' is deprecated. Please use this.getMasterContainer().show or this.getMasterContainer().hide instead.
-     * @param value {Boolean} the target value. 
+     * @param value {Boolean} the target value.
      */
     setMasterContainerHidden : function(value) {
       if (qx.core.Environment.get("qx.debug")) {
@@ -453,7 +459,7 @@ qx.Class.define("qx.ui.mobile.page.Manager",
 
     /**
     * Event handler for <code>changeVisibility</code> event on master container.
-    * @param evt {qx.event.type.Data} the change event. 
+    * @param evt {qx.event.type.Data} the change event.
     */
     _onMasterChangeVisibility: function(evt) {
       var isMasterVisible = ("visible" === evt.getData());
@@ -487,10 +493,10 @@ qx.Class.define("qx.ui.mobile.page.Manager",
       if (this.__isTablet) {
         if (qx.bom.Viewport.isLandscape()) {
           this.__masterContainer.setHideOnParentTap(false);
-          
           if (this.__masterContainer.isHidden()) {
             this.__masterContainer.show();
           } else {
+            this._removeDetailContainerGap();
             this.__masterContainer.hide();
           }
         } else {

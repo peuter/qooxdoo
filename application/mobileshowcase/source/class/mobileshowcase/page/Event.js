@@ -77,6 +77,10 @@ qx.Class.define("mobileshowcase.page.Event",
       }));
       container.addCssClass("eventcontainer");
 
+      container.addListener("touchmove", function(evt) {
+        evt.preventDefault();
+      }, this);
+
       // CONTAINER TOUCH AREA
       var containerTouchArea = this.__container = new qx.ui.mobile.container.Composite(new qx.ui.mobile.layout.VBox().set({
         alignX : "center",
@@ -281,6 +285,11 @@ qx.Class.define("mobileshowcase.page.Event",
     * @param y {Integer} pointer position y.
     */
     _setPointerCirclePosition : function(pointerId,x,y) {
+      // Disable pointer circles Windows Phone 8 as no pointer-events:none is available.
+      if (navigator.userAgent.match(/IEMobile\/10\.0/)) {
+        return;
+      }
+
       var pointer = this.__pointers[pointerId];
       if (pointer && pointer.target && pointer.remove == false) {
         pointer.target.setTranslateX(x);

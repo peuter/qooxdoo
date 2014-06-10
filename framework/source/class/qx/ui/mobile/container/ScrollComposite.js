@@ -19,7 +19,7 @@
 
 /**
  * @deprecated {4.0} Please use {@link qx.ui.mobile.container.Scroll} instead.
- * 
+ *
  * The ScrollComposite is a extension of {@link qx.ui.mobile.container.Composite},
  * and makes it possible to scroll vertically, if content size is greater than
  * scrollComposite's size.
@@ -66,9 +66,6 @@ qx.Class.define("qx.ui.mobile.container.ScrollComposite",
     this.__currentOffset = [0,0];
 
     this._scrollContainer = this._createScrollContainer();
-
-    this.addListener("touchstart", qx.bom.Event.preventDefault, this);
-    this.addListener("touchstart", qx.bom.Event.stopPropagation, this);
 
     this.addListener("trackstart", this._onTrackStart, this);
     this.addListener("track", this._onTrack, this);
@@ -573,9 +570,6 @@ qx.Class.define("qx.ui.mobile.container.ScrollComposite",
     this.removeListener("trackstart",this._onTrackStart,this);
     this.removeListener("track",this._onTrack,this);
     this.removeListener("swipe",this._onSwipe,this);
-
-    this.removeListener("touchstart", qx.bom.Event.preventDefault, this);
-    this.removeListener("touchstart", qx.bom.Event.stopPropagation, this);
 
     var children = this.getChildren();
     for(var i = 0; i < children.length; i++) {

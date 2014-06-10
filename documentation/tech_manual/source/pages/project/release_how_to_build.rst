@@ -27,7 +27,8 @@ Customize the code base
 * Remove unstable code or code for future releases.
 * ``generate.py fix`` in framework, each application and component. This could be done with the release makefile and the ``fix`` job.
 * Copy the .po files from the `Translation <http://qooxdoo.org/contrib/project/translation>`_ contrib to their designated places; ``generate.py translation``, commit .po files. (covered by this `bug <http://bugzilla.qooxdoo.org/show_bug.cgi?id=5429>`__).
-* Set ``tool/pylib/generator/runtime/Cache.py:CACHE_REVISION`` a unique value (e.g. a commit hash prefix); this ensures old caches of the users will be cleared.
+* Set ``tool/pylib/generator/runtime/Cache.py:CACHE_REVISION`` to a unique value (e.g. a commit hash prefix); this ensures old caches of the users will be cleared.
+* Set ``tool/grunt/lib/qx/tool/Cache.js:CACHE_REVISION`` to a unique value (e.g. a commit hash prefix); this ensures old caches of the users will be cleared.
 * Run ``generate.py api-verify`` in framework, and fix problematic links.
 * Run ``make linkcheck`` in the manual (documentation/manual), and fix problematic links where necessary.
 
@@ -371,6 +372,7 @@ Update Wiki
 * Adjust the `Documentation overview <http://qooxdoo.org/docs>`_.
 * Adjust the `Demo overview <http://qooxdoo.org/demos>`_.
 * Adjust the `Download page <http://qooxdoo.org/downloads>`_.
+* Adjust the `qx.Website Download page <http://qooxdoo.org/downloads/qx.website>`_.
 * Adjust the `Start page <http://qooxdoo.org/>`_. (all 4 sections: download links, gzipped lib sizes)
 
 .. _pages/project/release_how_to_build.rst#update_contrib:
@@ -390,7 +392,7 @@ Nightly Testing
 ---------------
 
 * Contribution skeleton test: Create a symlink to the qx git repo as expected by the demo's config.json ("../../../../qooxdoo/${QXVERSION}")
-* Branch application tests: Create a remote tracking branch for the maintenance branch and update the test config accordingly
+* Branch application tests: Update the maintenance branch name in the ``qooxdoo-git-update-patch`` job's Source Code Management and Execute Shell sections
 
 .. _pages/project/release_how_to_build.rst#announcements:
 

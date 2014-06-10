@@ -31,16 +31,16 @@ qx.Mixin.define("qx.ui.mobile.container.MNativeScroll",
   construct : function()
   {
     this.addCssClass("native");
-    if(qx.core.Environment.get("os.name") == "ios") {
-      this.addListener("touchstart", this._onTouchStart, this);
-      this.addListener("touchmove", qx.bom.Event.stopPropagation,this);
-    }
 
     this._snapPoints = [];
 
     this.addListenerOnce("appear", this._onAppear, this);
     this.addListener("trackstart", this._onTrackStart, this);
     this.addListener("trackend", this._onTrackEnd, this);
+
+    if (qx.core.Environment.get("os.name") == "ios") {
+      this.addListener("touchmove", this._onTouchMove, this);
+    }
   },
 
 
@@ -48,7 +48,6 @@ qx.Mixin.define("qx.ui.mobile.container.MNativeScroll",
   {
     _snapPoints : null,
     _lastScrollTime : null,
-    _abortScrollAnimation : null,
     _snapAfterMomentum : null,
 
 
@@ -61,12 +60,40 @@ qx.Mixin.define("qx.ui.mobile.container.MNativeScroll",
 
 
     /**
-    * Event handler for <code>trackstart</code> events.
+    * Event handler for <code>touchmove</code> event.
+    * Needed for preventing iOS page bounce.
+    * @param evt {qx.event.type.Touch} touchmove event.
     */
+    _onTouchMove : function(evt) {
+      // If scroll container is scrollable
+      if (this._isScrollableY()) {
+        evt.stopPropagation();
+      } else {
+        evt.preventDefault();
+      }
+    },
+
+
+    /**
+     * Event handler for <code>trackstart</code> events.
+     */
     _onTrackStart: function() {
       this._lastScrollTime = Date.now();
       this._snapAfterMomentum = false;
-      this._abortScrollAnimation = true;
+
+      if (qx.core.Environment.get("os.name") == "ios") {
+        // If scroll container is scrollable
+        if (this._isScrollableY()) {
+          var scrollTop = this.getContentElement().scrollTop;
+          var maxScrollTop = this.getContentElement().scrollHeight - this.getLayoutParent().getContentElement().offsetHeight;
+          if (scrollTop === 0) {
+            this.getContentElement().scrollTop = 1;
+          } else if (scrollTop == maxScrollTop) {
+            this.getContentElement().scrollTop = maxScrollTop - 1;
+          }
+        }
+      }
+
     },
 
 
@@ -126,8 +153,8 @@ qx.Mixin.define("qx.ui.mobile.container.MNativeScroll",
 
     /**
     * Determines the next snap points for the passed current position.
-    * @param current {Integer} description 
-    * @param snapProperty {String} "top" or "left" 
+    * @param current {Integer} description
+    * @param snapProperty {String} "top" or "left"
     * @return {Integer} the determined snap point.
     */
     _determineSnapPoint: function(current, snapProperty) {
@@ -156,8 +183,6 @@ qx.Mixin.define("qx.ui.mobile.container.MNativeScroll",
     * Snaps the scrolling area to the nearest snap point.
     */
     _snap : function() {
-      this._abortScrollAnimation = false;
-      
       var current = this._getPosition();
       var nextX = this._determineSnapPoint(current[0],"left");
       var nextY = this._determineSnapPoint(current[1],"top");
@@ -173,25 +198,6 @@ qx.Mixin.define("qx.ui.mobile.container.MNativeScroll",
      */
     _refresh : function() {
       this._calcSnapPoints();
-    },
-
-
-    /**
-     * Handler for <code>touchstart</code> event.
-     * Prevents "rubber-banding" effect of page in iOS.
-     * @param evt {qx.event.type.Touch} The touch event.
-     */
-    _onTouchStart: function(evt) {
-      // If scroll container is scrollable
-      if (this._isScrollableY()) {
-        var scrollTop = this.getContentElement().scrollTop;
-        var maxScrollTop = this.getContentElement().scrollHeight - this.getLayoutParent().getContentElement().offsetHeight;
-        if (scrollTop === 0) {
-          this.getContentElement().scrollTop = 1;
-        } else if (scrollTop == maxScrollTop) {
-          this.getContentElement().scrollTop = maxScrollTop - 1;
-        }
-      }
     },
 
 
@@ -232,39 +238,43 @@ qx.Mixin.define("qx.ui.mobile.container.MNativeScroll",
      * @param time {Integer} is always <code>0</code> for this mixin.
      */
     _scrollTo: function(x, y, time) {
-      var element = this.getContentElement();
-      if(!time) {
-        element.scrollLeft = x;
-        element.scrollTop = y;
-        return;
-      }
-     
       var position = this._getPosition();
 
-      if (x > position[0]) {
-        element.scrollLeft = position[0] + 1;
-      } else if (x < position[0]) {
-        element.scrollLeft = position[0] - 1;
+      var element = this.getContentElement();
+
+      var startX = -position[0] + element.scrollLeft;
+      var startY = -position[1] + element.scrollTop;
+      var endX = -x + element.scrollLeft;
+      var endY = -y + element.scrollTop;
+
+      if(!this._isScrollableY()) {
+        endY = 0;
       }
 
-      if (y > position[1]) {
-        element.scrollTop = position[1] + 1;
-      } else if (y < position[1]) {
-        element.scrollTop = position[1] - 1;
+      if(!this._isScrollableX()) {
+        endX = 0;
       }
 
-      var scrollFinished = element.scrollLeft == position[0] && element.scrollTop == position[1];
-      var didNotScroll = element.scrollTop == y && element.scrollLeft == x;
-      if (scrollFinished || didNotScroll) {
-        this._abortScrollAnimation = true;
-      }
+      var animationMap = {
+        "duration": time,
+        "keyFrames": {
+          0: {
+            "transform": "translate3d(" + startX + "px," + startY + "px,0)"
+          },
+          100: {
+            "transform": "translate3d(" + endX + "px," + endY + "px,0)"
+          }
+        },
+        "timing": "ease-out"
+      };
 
-      if(!this._abortScrollAnimation) {
-        var diffX = Math.abs(position[0] - x);
-        var diffY = Math.abs(position[1] - y);
-        var diff = Math.sqrt(diffX * diffX + diffY * diffY);
-        var refreshInterval = Math.ceil(time / diff);
-        setTimeout(this._scrollTo.bind(this, x, y, time - refreshInterval), refreshInterval);
+      if (element && element.children.length > 0) {
+        var animationHandle = qx.bom.element.Animation.animate(element.children[0], animationMap);
+
+        animationHandle.addListener("end", function() {
+          element.scrollLeft = x;
+          element.scrollTop = y;
+        }, this);
       }
     }
   },
@@ -273,8 +283,8 @@ qx.Mixin.define("qx.ui.mobile.container.MNativeScroll",
   destruct : function() {
     qx.bom.Event.removeNativeListener(this._getContentElement(), "scroll", this._onScroll.bind(this));
 
-    this.removeListener("touchmove", qx.bom.Event.stopPropagation,this);
-    this.removeListener("touchstart", this._onTouchStart, this);
+    this.removeListener("touchmove", this._onTouchMove, this);
+
     this.removeListener("appear", this._onAppear, this);
     this.removeListener("trackstart", this._onTrackStart, this);
     this.removeListener("trackend", this._onTrackEnd, this);

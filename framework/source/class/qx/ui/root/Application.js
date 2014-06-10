@@ -169,8 +169,8 @@ qx.Class.define("qx.ui.root.Application",
     // overridden
     _computeSizeHint : function()
     {
-      var width = qx.bom.Viewport.getWidth(this.__window) + (window.scrollX || 0);
-      var height = qx.bom.Viewport.getHeight(this.__window) + (window.scrollY || 0);
+      var width = qx.bom.Viewport.getWidth(this.__window);
+      var height = qx.bom.Viewport.getHeight(this.__window);
 
       return {
         minWidth : width,
@@ -204,8 +204,10 @@ qx.Class.define("qx.ui.root.Application",
         var touchAction = qx.bom.element.Style.get(node, "touch-action") !== "none" &&
           qx.bom.element.Style.get(node, "touch-action") !== "";
         var webkitOverflowScrolling = qx.bom.element.Style.get(node, "-webkit-overflow-scrolling") === "touch";
+        var overflowX = qx.bom.element.Style.get(node, "overflowX") != "hidden";
+        var overflowY = qx.bom.element.Style.get(node, "overflowY") != "hidden";
 
-        if (touchAction || webkitOverflowScrolling) {
+        if (touchAction || webkitOverflowScrolling || overflowY || overflowX) {
           return;
         }
         node = node.parentNode;

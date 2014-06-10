@@ -79,12 +79,6 @@ qx.Class.define("qx.ui.mobile.dialog.Picker",
     this.__pickerModel = new qx.data.Array();
 
     this.__pickerContainer = new qx.ui.mobile.container.Composite(new qx.ui.mobile.layout.HBox());
-
-    // Set PickerContainer anonymous on IE, because of pointer-events which should be ignored.
-    if(qx.core.Environment.get("browser.name") == "iemobile" || qx.core.Environment.get("browser.name") == "ie") {
-      this.__pickerContainer.setAnonymous(true);
-    }
-
     this.__pickerContainer.addCssClass("picker-container");
     this.__pickerContainer.addCssClass("gap");
     this.__pickerContainer.addCssClass("css-pointer-"+qx.core.Environment.get("css.pointerevents"));
@@ -111,7 +105,7 @@ qx.Class.define("qx.ui.mobile.dialog.Picker",
       this.setModal(true);
     }
 
-    this.base(arguments, this.__pickerContent, anchor) ;
+    this.base(arguments, this.__pickerContent, anchor);
   },
 
 
@@ -653,9 +647,6 @@ qx.Class.define("qx.ui.mobile.dialog.Picker",
       pickerSlot.addListener("track", this._onTrack, this);
       pickerSlot.addListener("trackend", this._onTrackEnd, this);
 
-      pickerSlot.addListener("touchstart", qx.bom.Event.preventDefault, this);
-      pickerSlot.addListener("touchstart", qx.bom.Event.stopPropagation, this);
-
       this.__modelToSlotMap[pickerSlot.getId()] = slotIndex;
       this.__selectedIndex[pickerSlot.getId()] = 0;
 
@@ -675,9 +666,6 @@ qx.Class.define("qx.ui.mobile.dialog.Picker",
         pickerSlot.removeListener("trackstart", this._onTrackStart, this);
         pickerSlot.removeListener("track", this._onTrack, this);
         pickerSlot.removeListener("trackend", this._onTrackEnd, this);
-
-        pickerSlot.removeListener("touchstart", qx.bom.Event.preventDefault, this);
-        pickerSlot.removeListener("touchstart", qx.bom.Event.stopPropagation, this);
 
         var oldPickerSlotContent = pickerSlot.removeAll();
         for (var j = 0; j < oldPickerSlotContent.length; j++) {

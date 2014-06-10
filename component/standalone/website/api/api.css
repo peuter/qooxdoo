@@ -12,6 +12,13 @@ body {
   min-width: 0;
 }
 
+.loading {
+  position: absolute;
+  font-family: Verdana, Arial, sans-serif;
+  font-size: 42px;
+  color: #fff;
+}
+
 #navContainer {
   position: fixed;
   top: 82px;
@@ -116,7 +123,7 @@ body {
   list-style: none;
   padding: 5px 10px;
   color: #3d72c9;
-  font-size: 18px;
+  font-size: 17px;
   border-top: 1px solid #DDD;
 
   -moz-transition:color 1s, background-color 1s;
@@ -251,6 +258,8 @@ body {
   overflow-y: auto;
   bottom: 0;
   right: 0;
+
+  -webkit-overflow-scrolling: touch;
 
   -moz-transition: left 500ms, top 500ms;
   -webkit-transition: left 500ms, top 500ms;
@@ -510,6 +519,15 @@ p {
   color: white;
 }
 
+#content div.qx-accordion {
+  margin-bottom: 0;
+}
+
+#content .qx-accordion ul {
+  list-style-type: none;
+  margin-bottom: 0;
+}
+
 .widget-dom .qx-accordion-button button {
   padding: 0;
   margin: 0;
@@ -545,6 +563,14 @@ p {
 .widget-dom .qx-accordion-button-active button:after {
   content: "Hide";
   cursor: pointer;
+}
+
+.widget-dom .qx-accordion-page-closed {
+  display: none;
+}
+
+.widget-dom .qx-accordion-page-closed pre {
+  height: inherit;
 }
 
 .widget-dom pre {
