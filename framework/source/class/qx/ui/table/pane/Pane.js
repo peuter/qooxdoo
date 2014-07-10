@@ -49,6 +49,8 @@ qx.Class.define("qx.ui.table.pane.Pane",
     this.__lastRowCount = 0;
 
     this.__rowCache = [];
+
+    this.addListener("track", this._onTrack, this);
   },
 
 
@@ -168,7 +170,7 @@ qx.Class.define("qx.ui.table.pane.Pane",
       return {
         width: this.getPaneScroller().getTablePaneModel().getTotalWidth(),
         height: 400
-      }
+      };
     },
 
 
@@ -218,6 +220,27 @@ qx.Class.define("qx.ui.table.pane.Pane",
             this.updateContent(false, null, row, true);
           }
         }
+      }
+    },
+
+
+    /**
+     * Handler for the track event which sets a new track target to make
+     * sure drag & drop works after a content update.
+     * @param e {qx.event.type.Track} The trackstart event.
+     */
+    _onTrack : function(e) {
+      // ignore if drag & drop is disabled
+      if (!this.getTable().getDraggable()) {
+        return;
+      }
+      var delta = e.getDelta();
+      // if the mouse moved a bit in any direction
+      var distance = qx.event.handler.DragDrop.MIN_DRAG_DISTANCE;
+      if (Math.abs(delta.x) > distance || Math.abs(delta.y) > distance) {
+        // reset the target for drag & drop
+        var gestureHandler = qx.event.Registration.getManager(window).getHandler(qx.event.handler.Gesture);
+        gestureHandler.updateGestureTarget(e.getPointerId(), this.getContentElement().getDomElement());
       }
     },
 
@@ -376,25 +399,13 @@ qx.Class.define("qx.ui.table.pane.Pane",
         this.__rowCacheClear();
       }
 
-      //var start = new Date();
-
-      if (scrollOffset && Math.abs(scrollOffset) <= Math.min(10, this.getVisibleRowCount()))
-      {
-        //this.debug("scroll", scrollOffset);
+      if (scrollOffset && Math.abs(scrollOffset) <= Math.min(10, this.getVisibleRowCount())) {
         this._scrollContent(scrollOffset);
-      }
-      else if (onlySelectionOrFocusChanged && !this.getTable().getAlwaysUpdateCells())
-      {
-        //this.debug("update row styles");
+      } else if (onlySelectionOrFocusChanged && !this.getTable().getAlwaysUpdateCells()) {
         this._updateRowStyles(onlyRow);
-      }
-      else
-      {
-        //this.debug("full update");
+      } else {
         this._updateAllRows();
       }
-
-      //this.debug("render time: " + (new Date() - start) + "ms");
     },
 
 
@@ -746,5 +757,6 @@ qx.Class.define("qx.ui.table.pane.Pane",
 
   destruct : function() {
     this.__tableContainer = this.__paneScroller = this.__rowCache = null;
+    this.removeListener("track", this._onTrack, this);
   }
 });

@@ -66,7 +66,7 @@ qx.Class.define("qx.ui.form.Button",
   /**
    * @param label {String} label of the atom
    * @param icon {String?null} Icon URL of the atom
-   * @param command {qx.ui.core.Command?null} Command instance to connect with
+   * @param command {qx.ui.command.Command?null} Command instance to connect with
    */
   construct : function(label, icon, command)
   {
@@ -301,6 +301,8 @@ qx.Class.define("qx.ui.form.Button",
      * @param e {qx.event.type.Pointer} Pointer event
      */
     _onTap : function(e) {
+      // "execute" is fired here so that the button can be dragged
+      // without executing it (e.g. in a TabBar with overflow)
       this.execute();
       e.stopPropagation();
     },

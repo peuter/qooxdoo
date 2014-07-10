@@ -104,6 +104,32 @@ var getConfig = function() {
       }
     },
     */
+    /* grunt-qx-build */
+    /*
+    build: {
+      options: {
+        appName: "<%= common.APPLICATION %>",
+        qxPath: "<%= common.QOOXDOO_PATH %>",
+        qxIconTheme: "<%= common.QXICONTHEME %>",
+        locales:  "<%= common.LOCALES %>",
+        sourcePath: "<%= common.SOURCE_PATH %>",
+        buildPath: "<%= common.BUILD_PATH %>",
+        environment: deepmerge(common.ENVIRONMENT, {
+          "qx.debug" : false,
+          "qx.debug.databinding" : false,
+          "qx.debug.dispose" : false,
+          "qx.debug.ui.queue" : false,
+          "qx.debug.io" : false
+        }),
+        includes: ["<%= common.APPLICATION_MAIN_CLASS %>", "<%= common.QXTHEME %>"],
+        excludes: [],
+        libraries: [
+          "<%= common.QOOXDOO_PATH %>/framework/Manifest.json",
+          "<%= common.ROOT %>/Manifest.json"
+        ]
+      }
+    },
+    */
     /* grunt-qx-info */
     info: {
       options: {
@@ -116,13 +142,24 @@ var getConfig = function() {
   return config;
 };
 
-var mergeConfig = function(config) {
+var mergeConfig = function(config, renameMap) {
   var task = "";
   var prop = "";
   var confKey = "";
   var confKeyProp = "";
+  var newTaskName = "";
+  var oldTaskName = "";
 
   var mergedConfig = deepmerge(getConfig(), config);
+
+  // possibility to rename tasks (i.e. config)
+  if (renameMap) {
+    for (oldTaskName in renameMap) {
+      newTaskName = renameMap[oldTaskName];
+      mergedConfig[newTaskName] = mergedConfig[oldTaskName];
+      delete mergedConfig[oldTaskName];
+    }
+  }
 
   // TODO:
   //  Consider:

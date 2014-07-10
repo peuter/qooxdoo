@@ -303,12 +303,12 @@ qx.Bootstrap.define("qx.event.handler.GestureCore", {
 
       this.__fireTrack("trackend", domEvent, gesture.target);
 
-      if (target !== gesture.target) {
-        delete this.__gesture[domEvent.pointerId];
-        return;
-      }
-
       if (gesture.isTap) {
+        if (target !== gesture.target) {
+          delete this.__gesture[domEvent.pointerId];
+          return;
+        }
+
         this._fireEvent(domEvent, "tap", domEvent.target || target);
 
         if (Object.keys(this.__lastTap).length > 0) {
@@ -334,7 +334,7 @@ qx.Bootstrap.define("qx.event.handler.GestureCore", {
         var swipe = this.__getSwipeGesture(domEvent, target);
         if (swipe) {
           domEvent.swipe = swipe;
-          this._fireEvent(domEvent, "swipe", domEvent.target || target);
+          this._fireEvent(domEvent, "swipe", gesture.target || target);
         }
       }
 
@@ -361,6 +361,19 @@ qx.Bootstrap.define("qx.event.handler.GestureCore", {
         this.__stopLongTapTimer(this.__gesture[id]);
         delete this.__gesture[id];
       }
+    },
+
+
+    /**
+     * Update the target of a running gesture. This is used in virtual widgets
+     * when the DOM element changes.
+     *
+     * @param id {String} The pointer id.
+     * @param target {Element} The new target element.
+     * @internal
+     */
+    updateGestureTarget : function(id, target) {
+      this.__gesture[id].target = target;
     },
 
 

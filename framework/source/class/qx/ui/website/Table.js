@@ -33,15 +33,15 @@ qx.Bootstrap.define("qx.ui.website.Table", {
 
   extend: qx.ui.website.Widget,
 
-  construct: function(selector, context) {
+  construct : function(selector, context) {
     this.base(arguments, selector, context);
   },
 
   events : {
     /** Fires at each model change */
-    "modelChanged" : "Array",
+    "modelChange" : "Array",
     /** Fires at each selection change */
-    "selectionChanged" : "qxWeb",
+    "selectionChange" : "qxWeb",
     /** Fires each time a cell of the widget is clicked */
     "cellClicked" : "Object",
     /** Fires after the model has been applied to the widget */
@@ -51,12 +51,11 @@ qx.Bootstrap.define("qx.ui.website.Table", {
   },
 
 
-  statics: {
+  statics : {
 
-    _config: {
-      caseSensitive: false,
-      cellValueClass: "qx-cell-value-class",
-      columnSelection: "none"
+    _config : {
+      caseSensitive : false,
+      rowSelection : "none"
     },
 
     /**
@@ -66,7 +65,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @return {qx.ui.website.Table} A new table collection.
      * @attach {qxWeb}
      */
-    table: function(model) {
+    table : function(model) {
       var table = new qx.ui.website.Table(this);
       table.init(model);
       return table;
@@ -77,7 +76,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param n {String} The String to check the type for
      * @return {Boolean} The result of the check
      */
-    __isNumber: function(n) {
+    __isNumber : function(n) {
       return (Object.prototype.toString.call(n) === '[object Number]' ||
         Object.prototype.toString.call(n) === '[object String]') && !isNaN(parseFloat(n)) && isFinite(n.toString().replace(/^-/, ''));
     },
@@ -87,7 +86,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param val {String} The String to check the type for
      * @return {Boolean} The result of the check
      */
-    __isDate: function(val) {
+    __isDate : function(val) {
       var d = new Date(val);
       return !isNaN(d.valueOf());
     },
@@ -98,7 +97,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param htmlElement {HTMLElement} The HTMLElement
      * @return {Integer} The position of the htmlElement or -1
      */
-    __getIndex: function(htmlCollection, htmlElement) {
+    __getIndex : function(htmlCollection, htmlElement) {
       var index = -1;
       for (var i = 0, l = htmlCollection.length; i < l; i++) {
         if (htmlCollection.item(i) == htmlElement) {
@@ -113,37 +112,46 @@ qx.Bootstrap.define("qx.ui.website.Table", {
     * Generates an unique id
     * @return {String} The generated id
     */
-    __getUID: function() {
+    __getUID : function() {
       return ((new Date()).getTime() + "" + Math.floor(Math.random() * 1000000)).substr(0, 18);
     },
 
     /** */
-    __selectionTypes: ["single", "multiple", "none"],
+    __selectionTypes : ["single", "multiple", "none"],
     /** */
-    __internalCellClass: "qx-table-cell",
+    __internalCellClass : "qx-table-cell",
 
-    __internalHeaderClass: "qx-table-header",
+    __internalHeaderClass : "qx-table-header",
     /** */
-    __internalSelectionClass: "qx-row-selection-class",
+    __internalSelectionClass : "qx-row-selection-class",
     /** */
-    __internalInputClass: "qx-selection-input"
+    __internalInputClass : "qx-selection-input",
+    /** */
+    __allColumnSelector : "qx-all-columns"
 
   },
 
 
 
-  members: {
+  members : {
 
     // overridden
-    init: function() {
+    init : function() {
+
       if (!this.base(arguments)) {
         return false;
       }
       var model = arguments[0];
       this._forEachElementWrapped(function(table) {
+
         if (qxWeb.getNodeName(table).toUpperCase() !== "TABLE") {
           throw new Error("collection should contains only table elements !!");
         }
+
+        if(!table[0].tHead){
+          throw new Error("A Table header element is required for this widget.");
+        }
+
         table.setProperty("__inputName", "input" + qx.ui.website.Table.__getUID());
         table.__getColumnMetaData(model);
         table.setModel(model);
@@ -159,13 +167,14 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param model {Array} The model to be set
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    setModel: function(model) {
+    setModel : function(model) {
+
       this._forEachElementWrapped(function(table) {
         if (typeof model != "undefined") {
           if (qx.lang.Type.isArray(model)) {
             table.setProperty("__model", model);
-            table.__applyTemplate(model);
-            this.emit("modelChanged", model);
+            table.setProperty("__modelToApply", true);
+            table.emit("modelChange", model);
           } else {
             throw new Error("model must be an Array !!");
           }
@@ -183,8 +192,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param type {String} The type of the column
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    setColumnType: function(columnName, type) {
-
+    setColumnType : function(columnName, type) {
       this._forEachElementWrapped(function(table) {
         table.__checkColumnExistance(columnName);
         table.getProperty("__columnMeta")[columnName].type = type;
@@ -198,7 +206,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param columnName {String} The column name
      * @return {String} The type of the specified column
      */
-    getColumnType: function(columnName) {
+    getColumnType : function(columnName) {
       this.eq(0).__checkColumnExistance(columnName);
       return this.eq(0).getProperty("__columnMeta")[columnName].type;
     },
@@ -210,7 +218,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param col {Integer} The column number
      * @return {qxWeb} The cell found at the given position
      */
-    getCell: function(row, col) {
+    getCell : function(row, col) {
       return qxWeb(this.eq(0).__getRoot().rows.item(row).cells.item(col));
     },
 
@@ -221,7 +229,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param compareFunc {Function} The comparison function
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    setCompareFunction: function(type, compareFunc) {
+    setCompareFunction : function(type, compareFunc) {
       type = qxWeb.string.firstUp(type);
       this._forEachElementWrapped(function(table) {
         table.setProperty("__compare" + type, compareFunc);
@@ -232,10 +240,11 @@ qx.Bootstrap.define("qx.ui.website.Table", {
 
     /**
      * Unset the compare function for the given type
+     *
      * @param type {String} The type to unset the function for
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    unsetCompareFunction: function(type) {
+    unsetCompareFunction : function(type) {
       type = qxWeb.string.firstUp(type);
       var compareFunc = this["__compare" + type] || this.__compareString;
       this._forEachElementWrapped(function(table) {
@@ -250,7 +259,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param type {String} The type to get the comparison function for
      * @return {Function} The comparison function
      */
-    getCompareFunction: function(type) {
+    getCompareFunction : function(type) {
       type = qxWeb.string.firstUp(type);
       return this.eq(0).getProperty("__compare" + type) || this["__compare" + type];
     },
@@ -261,23 +270,102 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param func {Function} The sorting function
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    setSortingFunction: function(func) {
+    setSortingFunction : function(func) {
       this._forEachElementWrapped(function(table) {
         table.setProperty("__sortingFunction", func);
       }.bind(this));
       return this;
     },
 
-
     /**
      * Unset the function that control the sorting process
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    unsetSortingFunction: function() {
+    unsetSortingFunction : function() {
       this._forEachElementWrapped(function(table) {
         table.setProperty("__sortingFunction", this.__defaultColumnSort);
       }.bind(this));
       return this;
+    },
+
+    /**
+     * Set the function that will be used to process the column filtering
+     * @param func {Function} The filter function
+     * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
+     */
+    setFilterFunction : function(func) {
+      this._forEachElementWrapped(function(table) {
+        table.setProperty("__filterFunction", func);
+      }.bind(this));
+       return this;
+    },
+
+    /**
+     * Unset the filter function
+     * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
+     */
+    unsetFilterFunction : function() {
+      this._forEachElementWrapped(function(table) {
+        table.setProperty("__filterFunction", this.__defaultColumnFilter);
+      }.bind(this));
+      return this;
+    },
+
+
+    /**
+    * Set the filter function to use to filter a specific column
+    * @param columnName {String} The name of the column
+    * @param func {Function} The filter
+    *
+    */
+    setColumnFilter : function(columnName, func){
+      this._forEachElementWrapped(function(table) {
+        table.__checkColumnExistance(columnName);
+        if(!table.getProperty("__filterFunc")){
+          table.setProperty("__filterFunc",{})
+        }
+        table.getProperty("__filterFunc")[columnName] = func;
+      }.bind(this));
+    },
+
+
+    /**
+    * Returns the filter function set on a specific column
+    *
+    * @param columnName {String} The name of the column
+    * @return {Function} The filter function
+    *
+    */
+    getColumnFilter : function(columnName){
+      if(this.eq(0).getProperty("__filterFunc")){
+        return this.eq(0).getProperty("__filterFunc")[columnName];
+      }
+      return null;
+    },
+
+    /**
+    * Set the filter function to use to filter the table rows
+    * @param func {Function} The filter
+    */
+    setRowFilter : function(func){
+      this._forEachElementWrapped(function(table) {
+        if(!table.getProperty("__filterFunc")){
+          table.setProperty("__filterFunc",{})
+        }
+        table.getProperty("__filterFunc").row = func;
+      }.bind(this));
+    },
+
+    /**
+    * Returns the filter function set on a specific column
+    * @return {Function} The filter function
+    *
+    */
+    getRowFilter : function(){
+      if(this.eq(0).getProperty("__filterFunc")){
+        return this.eq(0).getProperty("__filterFunc").row;
+      }
+      return null;
     },
 
 
@@ -287,14 +375,100 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param dir {String} The sorting direction (asc or desc)
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    sort: function(columnName, dir) {
-
+    sort : function(columnName, dir) {
       this.__checkColumnExistance(columnName);
       this._forEachElementWrapped(function(table) {
         table.__setSortingClass(columnName, dir);
-
         table.__sortDOM(table.__sort(columnName, dir));
       }.bind(this));
+      return this;
+    },
+
+
+    /**
+    * Filters rows or columns according to the given parameters
+    * @param keyword {String} The keyword to use to filter
+    * @param columnName {String ?} The column name
+    * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
+    */
+    filter : function(keyword, columnName) {
+
+      if(columnName){
+        this.__checkColumnExistance(columnName);
+      }else{
+        columnName = qx.ui.website.Table.__allColumnSelector;
+      }
+
+      this._forEachElementWrapped(function(table) {
+        if(!table.getProperty("__filters")){
+          table.setProperty("__filters", {});
+        }
+        if(table.getProperty("__filters")[columnName]){
+          table.getProperty("__filters")[columnName].keyword = keyword;
+          table.__getRoot().appendChild(table.getProperty("__filters")[columnName].rows);
+        }else{
+          table.getProperty("__filters")[columnName] = { keyword : keyword, rows : document.createDocumentFragment() };
+        }
+        table.__filterDom(keyword, columnName);
+      }.bind(this));
+
+      return this;
+    },
+
+    /**
+    * Resets the filter apllied on a specific column
+    * @param columnName {String ?} The column name
+    * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
+    */
+    resetFilter : function(columnName){
+      var filters = null;
+      this._forEachElementWrapped(function(table) {
+        filters = table.getProperty("__filters");
+        if(filters){
+          if(columnName){
+            table.__getRoot().appendChild(filters[columnName].rows);
+          }else{
+            for(var col in filters){
+              table.__getRoot().appendChild(filters[col].rows);
+            }
+          }
+        }
+      });
+      return this;
+    },
+
+
+    /**
+    * Filters the rendered table cells
+    * @param keyword {String} The keyword to use to filter
+    * @param columnName {String ?} The column name
+    * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
+    */
+    __filterDom : function(keyword, columnName){
+
+      var colIndex = this.__getColumnIndex(columnName);
+      var filterFunc = columnName == qx.ui.website.Table.__allColumnSelector ? this.getRowFilter() : this.getColumnFilter(columnName);
+
+      filterFunc = filterFunc || this.__defaultColumnFilter;
+
+      var rows = this.__getDataRows(), data = {};
+
+      for (var i = 0; i < rows.length; i++) {
+
+        data = {
+          columnName : columnName,
+          columnIndex : colIndex,
+          cell : colIndex ? qxWeb(rows[i].cells.item(colIndex)) : null,
+          row : qxWeb(rows[i]),
+          keyword : keyword
+        };
+
+        if (!filterFunc.bind(this)(data)) {
+          this.getProperty("__filters")[columnName].rows.appendChild(rows[i])
+        }
+
+      }
+
       return this;
     },
 
@@ -303,7 +477,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * Get the current column sorting information for the first widget in the collection
      * @return {Map} The map containing the current sorting information
      */
-    getSortingData: function() {
+    getSortingData : function() {
       return this.eq(0).getProperty("__sortingData");
     },
 
@@ -315,10 +489,10 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param template {String} The mustache template
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    setItemTemplate: function(columnName, template) {
+    setItemTemplate : function(columnName, template) {
       this._forEachElementWrapped(function(table) {
         table.getProperty("__columnMeta")[columnName].template = template;
-        table.__applyTemplate(table.getProperty("__model"));
+        table.setProperty("__modelToApply", true);
       });
       return this;
     },
@@ -330,25 +504,29 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param template {String} The mustache template
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    setItemTemplates: function(template) {
+    setItemTemplates : function(template) {
       this._forEachElementWrapped(function(table) {
         for (var key in this.getProperty("__columnMeta")) {
           this.getProperty("__columnMeta")[key].template = template;
         }
-        table.__applyTemplate(this.getProperty("__model"));
+        table.setProperty("__modelToApply", true);
       });
       return this;
     },
 
 
     //overriden
-    render: function() {
+    render : function() {
       this._forEachElementWrapped(function(table) {
         var sortingData = table.getSortingData();
-        var columnSelection = table.getConfig("columnSelection");
+        var rowSelection = table.getConfig("rowSelection");
 
-        if (qx.ui.website.Table.__selectionTypes.indexOf(columnSelection) != -1) {
-          table.__processSelectionInputs(columnSelection);
+        if(table.getProperty("__modelToApply")){
+          table.__applyTemplate(table.getProperty("__model"));
+           table.setProperty("__modelToApply", false);
+        }
+        if (qx.ui.website.Table.__selectionTypes.indexOf(rowSelection) != -1) {
+          table.__processSelectionInputs(rowSelection);
         }
 
         if (sortingData) {
@@ -363,14 +541,14 @@ qx.Bootstrap.define("qx.ui.website.Table", {
 
     /**
     * Renders or removes the selection inputs according to the specified widget selection mode
-    * @param columnSelection {String} The selection mode
+    * @param rowSelection {String} The selection mode
     * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
     */
-    __processSelectionInputs: function(columnSelection) {
+    __processSelectionInputs : function(rowSelection) {
 
-      var currentSelection = this.getProperty("__columnSelection") || "none";
+      var currentSelection = this.getProperty("__rowSelection") || "none";
 
-      switch (columnSelection) {
+      switch (rowSelection) {
 
         case "none":
           if (currentSelection != "none") {
@@ -383,6 +561,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
             this.__createInputs("checkbox");
           } else if (currentSelection == "single") {
             qxWeb("." + qx.ui.website.Table.__internalSelectionClass + " input").setAttribute("type", "checkbox");
+            qxWeb(".qx-radio").removeClass("qx-radio").addClass("qx-checkbox");
           }
           break;
 
@@ -391,20 +570,23 @@ qx.Bootstrap.define("qx.ui.website.Table", {
             this.__createInputs("radio");
           } else if (currentSelection == "multiple") {
             qxWeb("." + qx.ui.website.Table.__internalSelectionClass + " input").setAttribute("type", "radio");
+            qxWeb(".qx-checkbox").removeClass("qx-checkbox").addClass("qx-radio");
           }
           break;
       }
 
-      this.setProperty("__columnSelection", columnSelection);
+      this.setProperty("__rowSelection", rowSelection);
+
       return this;
     },
+
 
     /**
      * Creates input nodes for the row selection
      * @param type {String} The type of the inputs to creates
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    __createInputs: function(type) {
+    __createInputs : function(type) {
       var rows = this[0].rows;
       for (var i = 0; i < rows.length; i++) {
         this.__createInput(rows.item(i), type);
@@ -419,15 +601,15 @@ qx.Bootstrap.define("qx.ui.website.Table", {
     * @param type {String} The type of the input tom create (radio or checkbox)
     * @param nodeName {String} The nodename of the table cell that will contain the input
     */
-    __createInput: function(row, type, nodeName) {
+    __createInput : function(row, type, nodeName) {
       if (typeof nodeName == "undefined") {
         nodeName = qxWeb.getNodeName(qxWeb(row.cells.item(0)));
       }
 
       var clazz = qx.ui.website.Table, inputName = this.getProperty("__inputName");
       var className = (nodeName == "th") ? clazz.__internalSelectionClass + " " + clazz.__internalHeaderClass : clazz.__internalSelectionClass;
-
-      var inputNode = qxWeb.create("<" + nodeName + " class='" + className + "'><input name='" + inputName + "' class='" + clazz.__internalInputClass + "' type='" + type + "' /></" + nodeName + ">");
+      var id = qx.ui.website.Table.__getUID();
+      var inputNode = qxWeb.create("<" + nodeName + " class='" + className + "'><input id='"+id+"' name='" + inputName + "' class='qx-"+type+" "+ clazz.__internalInputClass + "' type='" + type + "' /><label for='"+id+"'></label></" + nodeName + ">");
       if (row.cells.item(0)) {
         inputNode.insertBefore(qxWeb(row.cells.item(0)));
       } else {
@@ -440,7 +622,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
     * Checks if a column with the specified name exists
     * @param columnName {String} The name of the column to check
     */
-    __checkColumnExistance: function(columnName) {
+    __checkColumnExistance : function(columnName) {
       var data = this.getProperty("__columnMeta");
       if (data && !data[columnName]) {
         throw new Error("Column " + columnName + " does not exists !");
@@ -453,14 +635,11 @@ qx.Bootstrap.define("qx.ui.website.Table", {
     * @return {HTMLTableRowElement} The row with meta information
     */
     __getHeaderRow : function(){
-      var clazz = qx.ui.website.Table;
-      var tHeadOrFoot = this[0].tHead || this[0].tFoot;
-      if(tHeadOrFoot){
-        return tHeadOrFoot.rows.item(0);
-      }else{
-        var headers = qxWeb("[data-name]."+clazz.__internalCellClass);
-        return headers[0].parentNode;
+      var tHeadOrFoot = this[0].tHead;
+      if (!tHeadOrFoot) {
+        throw new Error("A Table header element is required for this widget.");
       }
+      return tHeadOrFoot.rows.item(0);
     },
 
 
@@ -469,45 +648,31 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param model {Array} The widget's model
     * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    __getColumnMetaData: function(model) {
+    __getColumnMetaData : function(model) {
 
-      var tHead = this[0].tHead || this.__getRoot();
       var data = {};
 
       this.__addClassToHeaderAndFooter(this[0].tHead);
       this.__addClassToHeaderAndFooter(this[0].tFoot);
 
-      var cells = null,
-        colType = null,
-        colName = null,
-        uid = 0,
-        cell = null;
-      if (tHead && (tHead.rows.length > 0)) {
-        cells = tHead.rows.item(0).cells;
-      } else if (model && model.length > 0) {
-        cells = model[0]
-      }
+      var cells = null, colName = null, cell = null;
+      cells = this[0].tHead.rows.item(0).cells;
 
       for (var i = 0, l = cells.length; i < l; i++) {
-        uid = qx.ui.website.Table.__getUID();
-        if (cells.item) {
-          cell = qxWeb(cells.item(i));
-          colType = cell.getData("type") || "String";
-          colName = this.__getColumName(cells.item(i));
-          if (!colName) {
-            colName = uid;
-            cell.setData("name", colName);
-          }
-        } else {
-          colType = "String";
-          colName = uid;
+
+        cell = qxWeb(cells.item(i));
+        colName = this.__getColumName(cells.item(i));
+        if (!colName) {
+          colName = qx.ui.website.Table.__getUID();
+          cell.setData("qxCellName", colName);
         }
 
         data[colName] = {
           template: null,
-          type: colType,
+          type: cell.getData("qxColumnType") || "String",
           name: colName
         };
+
       }
 
       this.setProperty("__columnMeta", data);
@@ -521,7 +686,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param footOrHead {HTMLElement} Html element representing the header or footer of the table
     * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    __addClassToHeaderAndFooter: function(footOrHead) {
+    __addClassToHeaderAndFooter : function(footOrHead) {
       if (footOrHead && footOrHead.rows.length > 0) {
         if (footOrHead.rows.item(0).cells.length > 0) {
           if (!qxWeb(footOrHead.rows.item(0).cells.item(0)).hasClass(qx.ui.website.Table.__internalHeaderClass)) {
@@ -538,7 +703,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param dataRows {Array} Array containing the sorted rows
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    __sortDOM: function(dataRows) {
+    __sortDOM : function(dataRows) {
       for (var i = 0, l = dataRows.length; i < l; i++) {
         if (i) {
           qxWeb(dataRows[i]).insertAfter(dataRows[i - 1]);
@@ -555,7 +720,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * registers global events
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    __registerEvents: function() {
+    __registerEvents : function() {
       this.on("click", this.__detectClickedCell);
       this.on("cellClicked", function(data) {
         this.getProperty("__sortingFunction").bind(this)(data);
@@ -568,7 +733,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
     * Checks if the selection inputs are already rendered
     * @return {Boolean} True if the inputs are rendered and false otherwise
     */
-    __selectionRendered: function() {
+    __selectionRendered : function() {
       return qxWeb("." + qx.ui.website.Table.__internalSelectionClass).length > 0;
     },
 
@@ -578,12 +743,12 @@ qx.Bootstrap.define("qx.ui.website.Table", {
     * @param cell {qxWeb} The table cell containing the clicked input
     * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
     */
-    __processSelection: function(cell) {
+    __processSelection : function(cell) {
 
       var clazz = qx.ui.website.Table;
       var inputs = qxWeb("." + clazz.__internalInputClass);
       var clickedInput = cell.find("input");
-      var selectionMode = this.getConfig("columnSelection");
+      var selectionMode = this.getConfig("rowSelection");
       var headerInput = qxWeb("." + clazz.__internalHeaderClass + " input");
       var selection = [];
 
@@ -633,7 +798,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param e {Event} The native click event.
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    __detectClickedCell: function(e) {
+    __detectClickedCell : function(e) {
 
       var target = e.getTarget();
 
@@ -654,19 +819,21 @@ qx.Bootstrap.define("qx.ui.website.Table", {
         }
       }else{
         if (cell && cell.length > 0) {
-          var row = cell[0].parentNode,
-            cells = row.cells;
+          var row = cell[0].parentNode, cells = row.cells;
           var colNumber = qx.ui.website.Table.__getIndex(cells, cell[0]);
           var tHead = this.__getHeaderRow();
           var headCell = tHead.cells.item(colNumber);
           var colName = this.__getColumName(headCell);
+          var columnIndex = this.getConfig("rowSelection") != "none" ? this.__getColumnIndex(colName) -1 : this.__getColumnIndex(colName);
 
           this.emit("cellClicked", {
+            columnIndex : columnIndex,
             columnName: colName,
             cell: qxWeb(cell)
           });
         }
       }
+
       return this;
     },
 
@@ -677,15 +844,25 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param model {Array} The model to apply
      * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
      */
-    __applyTemplate: function(model) {
+    __applyTemplate : function(model) {
 
-      var self = this, cell, row;
+      var cell, row;
       var tHead = this.__getHeaderRow();
       var createdRow = null, colMeta = null;
-      var inputType = (this.getConfig("columnSelection") == "single") ? "radio" : "checkbox";
 
+      var columnMetas = this.getProperty("__columnMeta")
+      for(var col in columnMetas){
+        if(!columnMetas[col].template){
+          if (qxWeb.env.get("qx.debug") && qxWeb.log) {
+            qxWeb.log.debug("No template found for column "+col);
+          }
+          return this;
+        }
+      }
+
+      var inputType = (this.getConfig("rowSelection") == "single") ? "radio" : "checkbox";
       if (this.__getRoot().rows.length > model.length) {
-        this.__deleteRows(model.length + 1);
+        this.__deleteRows(model.length);
       }
 
       var renderedColIndex = 0, templateApplied = true;
@@ -693,7 +870,6 @@ qx.Bootstrap.define("qx.ui.website.Table", {
       for (var i = 0, rowCount = model.length; i < rowCount; i++) {
 
         row = model[i];
-
         if (!this.__isRowRendered(i)) {
           createdRow = this.__getRoot().insertRow(i);
           if (this.__selectionRendered()) {
@@ -702,31 +878,29 @@ qx.Bootstrap.define("qx.ui.website.Table", {
         }
 
         for (var j = 0, colCount = row.length; j < colCount; j++) {
-          renderedColIndex = j;
-          if (self.__selectionRendered()) {
-            renderedColIndex = j + 1;
-          }
-          colMeta = self.__getDataForColumn(self.__getColumName(tHead.cells.item(renderedColIndex)));
+
+          renderedColIndex = this.__selectionRendered() ? j + 1 : j;
+
+          colMeta = this.__getDataForColumn(this.__getColumName(tHead.cells.item(renderedColIndex)));
+
           if (!colMeta.template) {
             templateApplied = false;
             break;
           }
 
-          if (!self.__isCellRendered(i, renderedColIndex)) {
-            self.__getRoot().rows.item(i).insertCell(renderedColIndex);
+          if (!this.__isCellRendered(i, renderedColIndex)) {
+            this.__getRoot().rows.item(i).insertCell(renderedColIndex);
           }
-          cell = self.getCell(i, renderedColIndex);
+
+          cell = this.getCell(i, renderedColIndex);
           if (!cell.hasClass(qx.ui.website.Table.__internalCellClass) && !cell.hasClass("qx-select-cell")) {
             cell.addClass(qx.ui.website.Table.__internalCellClass);
           }
+
           cell.setHtml(qxWeb.template.render(colMeta.template, model[i][j]));
           this.emit("cellRender", {cell : cell, value : model[i][j]});
         }
 
-        if (!colMeta.template) {
-          templateApplied = false;
-          break;
-        }
       }
 
       if (templateApplied) {
@@ -739,15 +913,15 @@ qx.Bootstrap.define("qx.ui.website.Table", {
 
     /**
     * Removes row from the DOM starting from the specified index
-    * @param startIndex {Integer} The start index
+    * @param  rowCount {Integer} The number of rows the kept
     * @return {qx.ui.website.Table} <code>this</code> reference for chaining.
     */
-    __deleteRows: function(startIndex) {
+    __deleteRows : function(rowCount) {
       var renderedRows = this.__getRoot().rows;
-      for (var i = startIndex; i < renderedRows.length; i++) {
-        this.__getRoot().deleteRow(i);
+      while(renderedRows.length > rowCount){
+        this[0].deleteRow(renderedRows.length)
       }
-      return this
+      return this;
     },
 
 
@@ -756,7 +930,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
     * @param columName {String} The name of the column to get the metadata for
     * @return {Map} Map containing the metadata
     */
-    __getDataForColumn: function(columName) {
+    __getDataForColumn : function(columName) {
       return this.getProperty("__columnMeta")[columName];
     },
 
@@ -765,7 +939,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * Gets the Root element contening the data rows
      * @return {HTMLElement} The element containing the data rows
      */
-    __getRoot: function() {
+    __getRoot : function() {
       return this[0].tBodies.item(0) || this[0];
     },
 
@@ -775,7 +949,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param index {Integer} The index of the row to check
      * @return {Boolean} The result of the check
      */
-    __isRowRendered: function(index) {
+    __isRowRendered : function(index) {
       if (this.__getRoot().rows.item(index)) {
         return true;
       }
@@ -789,7 +963,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param colIndex {Integer} The index of the column
      * @return {Boolean} The result of the check
      */
-    __isCellRendered: function(rowIndex, colIndex) {
+    __isCellRendered : function(rowIndex, colIndex) {
       if (!this.__isRowRendered(rowIndex)) {
         return false;
       }
@@ -805,7 +979,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param columnName {String} The name of the sorted column
      * @param dir {String} The sorting direction
      */
-    __setSortingClass: function(columnName, dir) {
+    __setSortingClass : function(columnName, dir) {
       var data = {
         columnName: columnName,
         direction: dir
@@ -822,11 +996,11 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param columnName {String} The name of the sorted column
      * @param dir {String} The sorting direction
      */
-    __addSortingClassToCol: function(HeaderOrFooter, columnName, dir) {
+    __addSortingClassToCol : function(HeaderOrFooter, columnName, dir) {
       if (HeaderOrFooter && HeaderOrFooter.rows.length > 0) {
-        qxWeb(HeaderOrFooter.rows.item(0).cells).removeClasses(["qx-asc", "qx-desc"]);
-        var cell = qxWeb("[data-name='" + columnName + "'], #" + columnName);
-        cell.addClass("qx-" + dir);
+        qxWeb(HeaderOrFooter.rows.item(0).cells).removeClasses(["qx-sort-asc", "qx-sort-desc"]);
+        var cell = qxWeb("[data-qx-cell-name='" + columnName + "'], #" + columnName);
+        cell.addClass("qx-sort-" + dir);
       }
     },
 
@@ -837,20 +1011,25 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param direction {String} The sorting direction
      * @return {Array} Array containinfg the sorted rows
      */
-    __sort: function(columnName, direction) {
+    __sort : function(columnName, direction) {
+
       var meta = this.__getDataForColumn(columnName);
       var columnType = qxWeb.string.firstUp(meta.type);
-      if (!this["__compare" + columnType]) {
+
+      if(!this["__compare" + columnType] && !this.getProperty("__compare"+ columnType)) {
         columnType = "String";
       }
+
       var compareFunc = this.getCompareFunction(columnType).bind(this);
       var model = this.__getDataRows();
       var columnIndex = this.__getColumnIndex(columnName);
+
       return model.sort(function(a, b) {
         var x = this.__getCellValue(qxWeb(a.cells.item(columnIndex)));
         var y = this.__getCellValue(qxWeb(b.cells.item(columnIndex)));
         return compareFunc(x, y, direction);
       }.bind(this));
+
     },
 
 
@@ -861,7 +1040,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param direction {String} The sorting direction
      * @return {Integer} The result of the comparison
      */
-    __compareNumber: function(x, y, direction) {
+    __compareNumber : function(x, y, direction) {
       x = Number(x) || 0;
       y = Number(y) || 0;
       if (direction == "asc") {
@@ -878,8 +1057,8 @@ qx.Bootstrap.define("qx.ui.website.Table", {
     * @param headerCell {HTMLTableCellElement} The cell to get the column name for
     * @return {String} The column name
     */
-    __getColumName: function(headerCell) {
-      return headerCell.getAttribute("data-name") || headerCell.getAttribute("id");
+    __getColumName : function(headerCell) {
+      return headerCell.getAttribute("data-qx-cell-name") || headerCell.getAttribute("id");
     },
 
 
@@ -890,10 +1069,16 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param direction {String} The sorting direction
      * @return {Integer} The result of the comparison
      */
-    __compareDate: function(x, y, direction) {
+    __compareDate : function(x, y, direction) {
       x = qx.ui.website.Table.__isDate(x) ? new Date(x) : new Date(0);
       y = qx.ui.website.Table.__isDate(y) ? new Date(y) : new Date(0);
-      return this.__compareNumber(x.getTime(), y.getTime());
+
+      if (direction == "asc") {
+        return x - y;
+      } else if (direction == "desc") {
+        return y - x;
+      }
+      return 0;
     },
 
 
@@ -904,7 +1089,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param direction {String} The sorting direction
      * @return {Integer} The result of the comparison
      */
-    __compareString: function(x, y, direction) {
+    __compareString : function(x, y, direction) {
       if (!this.getConfig("caseSensitive")) {
         x = x.toLowerCase();
         y = y.toLowerCase();
@@ -923,12 +1108,8 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * @param cell {qxWeb} The cell to get the value of
      * @return {String} The text content of the cell
      */
-    __getCellValue: function(cell) {
-      var valueNode = cell.find("." + this.getConfig("cellValueClass"));
-      if (valueNode.length == 0) {
-        valueNode = cell;
-      }
-      return (valueNode.getTextContent() || "");
+    __getCellValue : function(cell) {
+      return cell.getTextContent() || "";
     },
 
 
@@ -936,7 +1117,8 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * Gets the table's data rows from the DOM
      * @return {Array} Array containing the rows of the table
      */
-    __getDataRows: function() {
+    __getDataRows : function() {
+
       var tableNode = this[0];
       var rows = tableNode.rows, model = [], cell=null,  cells = [];
 
@@ -963,9 +1145,10 @@ qx.Bootstrap.define("qx.ui.website.Table", {
      * Default sorting processing
      * @param data {Map} Sorting data
      */
-    __defaultColumnSort: function(data) {
+    __defaultColumnSort : function(data) {
       var dir = "asc";
       var sortedData = this.getSortingData();
+
       if (sortedData) {
         if (data.columnName == sortedData.columnName) {
           if (sortedData.direction == dir) {
@@ -978,16 +1161,34 @@ qx.Bootstrap.define("qx.ui.website.Table", {
       }
     },
 
+    /**
+    * Default column filter function
+    * @param data {Map} Map containing the filter data
+    * @return {Boolean} True wenn the row containing the current cell should be kept
+    */
+    __defaultColumnFilter : function(data) {
+
+      var caseSensitive = this.getConfig("caseSensitive");
+      var cell = data.columnName == qx.ui.website.Table.__allColumnSelector ? data.row : data.cell;
+      var cellValue = this.__getCellValue(cell);
+
+      if(caseSensitive){
+        return cellValue.indexOf(data.keyword) != -1;
+      }else{
+        return cellValue.toLowerCase().indexOf(data.keyword.toLowerCase()) != -1;
+      }
+
+    },
+
 
     /**
      * Gets the index of the column with the specified name
      * @param columnName {String} The colukn name
-     * @return {Integer} The index of the column
+     * @return {Integer} The index of the column or -1 if the column does'nt exists
      */
-    __getColumnIndex: function(columnName) {
+    __getColumnIndex : function(columnName) {
       var tHead = this.__getHeaderRow();
       var cells = tHead.cells;
-
       for (var i = 0; i < cells.length; i++) {
         if (columnName == this.__getColumName(cells.item(i))) {
           return i;
@@ -999,7 +1200,7 @@ qx.Bootstrap.define("qx.ui.website.Table", {
   },
 
 
-  defer: function(statics) {
+  defer : function(statics) {
     qxWeb.$attach({
       table: statics.table
     });

@@ -154,7 +154,7 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
     currentIndex : {
       check : "Number",
       init : 0,
-      apply : "_applyCurrentIndex",
+      apply : "_scrollToPage",
       event : "changeCurrentIndex"
     },
 
@@ -207,14 +207,16 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
       page.addCssClass("carousel-page");
 
       this.__pages.push(page);
-      this.__carouselScroller.add(page,{flex:1});
+      this.__carouselScroller.add(page, {
+        flex: 1
+      });
 
       var paginationLabel = this._createPaginationLabel();
       this.__paginationLabels.push(paginationLabel);
       this.__pagination.add(paginationLabel);
 
       this._setTransitionDuration(0);
-      this._updateCarouselLayout();
+      this._onContainerUpdate();
     },
 
 
@@ -225,7 +227,7 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
      */
     removePageByIndex : function(pageIndex) {
       if (this.__pages && this.__pages.length > pageIndex) {
-        if (pageIndex == this.getCurrentIndex() && this.getCurrentIndex() !== 0) {
+        if (pageIndex <= this.getCurrentIndex() && this.getCurrentIndex() !== 0) {
           this.setCurrentIndex(this.getCurrentIndex() - 1);
         }
 
@@ -239,10 +241,12 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
           self: this,
           targetIndex: pageIndex - 1
         });
-        paginationLabel.dispose();
+        qx.util.DisposeUtil.destroyContainer(paginationLabel);
 
         this.__pages.splice(pageIndex, 1);
         this.__paginationLabels.splice(pageIndex, 1);
+
+        this._onContainerUpdate();
 
         return targetPage;
       }
@@ -267,7 +271,7 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
      */
     nextPage : function() {
       if (this.getCurrentIndex() == this.__pages.length - 1) {
-        if (this.isScrollLoop()) {
+        if (this.isScrollLoop() && this.__pages.length > 1) {
           this._doScrollLoop();
         }
       } else {
@@ -281,12 +285,25 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
      */
     previousPage : function() {
       if (this.getCurrentIndex() === 0) {
-        if (this.isScrollLoop()) {
+        if (this.isScrollLoop() && this.__pages.length > 1) {
           this._doScrollLoop();
         }
       } else {
         this.setCurrentIndex(this.getCurrentIndex() - 1);
       }
+    },
+
+
+    /**
+    * Returns the current page count of this carousel.
+    * @return {Integer} the current page count
+    */
+    getPageCount : function() {
+      if(this.__pages) {
+        return this.__pages.length;
+      }
+
+      return 0;
     },
 
 
@@ -299,6 +316,8 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
       if (pageIndex >= this.__pages.length || pageIndex < 0) {
         return;
       }
+
+      this._updatePagination(pageIndex);
 
       var snapPoint = -pageIndex * this.__carouselWidth;
       this._updateScrollerPosition(snapPoint);
@@ -378,21 +397,16 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
 
     /**
      * Called when showPagination property is changed.
-     * Manages show(), hide() of pagination container.
+     * Manages <code>show()</code> and <code>hide()</code> of pagination container.
      */
     _applyShowPagination : function(value, old) {
-      if(value) {
-        this.__pagination.show();
+      if (value) {
+        if (this.__pages.length > 1) {
+          this.__pagination.show();
+        }
       } else {
         this.__pagination.hide();
       }
-    },
-
-
-    // property apply
-    _applyCurrentIndex : function(value, old) {
-      this._updatePagination(old, value);
-      this._scrollToPage(value);
     },
 
 
@@ -428,7 +442,15 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
         qx.bom.element.Style.set(pageContentElement, "height", carouselSize.height + "px");
       }
 
-      this._updatePagination(this.getCurrentIndex(), this.getCurrentIndex());
+      if (this.__pages.length == 1) {
+        this.__pagination.exclude();
+      } else {
+        if (this.isShowPagination()) {
+          this.__pagination.show();
+        }
+      }
+
+      this._refreshScrollerPosition();
     },
 
 
@@ -648,7 +670,11 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
         }
       }
 
-      this.setCurrentIndex(nearestPageIndex);
+      if (this.getCurrentIndex() == nearestPageIndex) {
+        this._refreshScrollerPosition();
+      } else {
+        this.setCurrentIndex(nearestPageIndex);
+      }
     },
 
 
@@ -656,17 +682,14 @@ qx.Class.define("qx.ui.mobile.container.Carousel",
      * Updates the pagination indicator of this carousel.
      * Removes the active state from from paginationLabel with oldActiveIndex,
      * Adds actives state to paginationLabel new ActiveIndex.
-     * @param oldActiveIndex {Integer} Index of paginationLabel which should loose active state
      * @param newActiveIndex {Integer} Index of paginationLabel which should have active state
      */
-    _updatePagination : function(oldActiveIndex, newActiveIndex) {
-      var oldActiveLabel = this.__paginationLabels[oldActiveIndex];
-      var newActiveLabel = this.__paginationLabels[newActiveIndex];
-
-      if (oldActiveLabel && oldActiveLabel.getContainerElement()) {
-        oldActiveLabel.removeCssClass("active");
+    _updatePagination : function(newActiveIndex) {
+      for (var i = 0; i < this.__paginationLabels.length; i++) {
+        this.__paginationLabels[i].removeCssClass("active");
       }
 
+      var newActiveLabel = this.__paginationLabels[newActiveIndex];
       if (newActiveLabel && newActiveLabel.getContainerElement()) {
         newActiveLabel.addCssClass("active");
       }

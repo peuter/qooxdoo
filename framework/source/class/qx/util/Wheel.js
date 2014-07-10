@@ -13,15 +13,15 @@
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
-     * Martin Wittemann (wittemann)
+     * Martin Wittemann (martinwittemann)
 
-************************************************************************ */
+ ************************************************************************ */
 
 /**
  * Util for mouse wheel normalization.
  */
 qx.Bootstrap.define("qx.util.Wheel", {
-  statics : {
+  statics: {
     /**
      * The maximal measured scroll wheel delta.
      * @internal
@@ -50,15 +50,18 @@ qx.Bootstrap.define("qx.util.Wheel", {
      * @return {Integer} Scroll wheel movement for the given axis. If no axis
      *   is given, the y axis is used.
      */
-    getDelta : function(domEvent, axis) {
+    getDelta: function (domEvent, axis) {
       // default case
       if (axis === undefined) {
-        if (delta === undefined) {
-          // default case
-          var delta = -domEvent.wheelDelta;
-          if (domEvent.wheelDelta === undefined) {
-            delta = domEvent.detail;
-          }
+        // default case
+        var delta = 0;
+        if (domEvent.wheelDelta !== undefined) {
+          delta = -domEvent.wheelDelta;
+        } else if (domEvent.detail !== 0) {
+          delta = domEvent.detail;
+        } else if (domEvent.deltaY !== undefined) {
+          // use deltaY as default for firefox
+          delta = domEvent.deltaY;
         }
         return this.__normalize(delta);
       }
@@ -113,14 +116,14 @@ qx.Bootstrap.define("qx.util.Wheel", {
      * @param delta {Number} The mouse delta.
      * @return {Number} The normalized delta value
      */
-    __normalize : function(delta) {
+    __normalize: function (delta) {
       var absDelta = Math.abs(delta);
 
       // store the min value
       if (
         qx.util.Wheel.MINSCROLL == null ||
         qx.util.Wheel.MINSCROLL > absDelta
-      ) {
+        ) {
         qx.util.Wheel.MINSCROLL = absDelta;
         this.__recalculateMultiplicator();
       }
@@ -129,7 +132,7 @@ qx.Bootstrap.define("qx.util.Wheel", {
       if (
         qx.util.Wheel.MAXSCROLL == null ||
         qx.util.Wheel.MAXSCROLL < absDelta
-      ) {
+        ) {
         qx.util.Wheel.MAXSCROLL = absDelta;
         this.__recalculateMultiplicator();
       }
@@ -138,7 +141,7 @@ qx.Bootstrap.define("qx.util.Wheel", {
       if (
         qx.util.Wheel.MAXSCROLL === absDelta &&
         qx.util.Wheel.MINSCROLL === absDelta
-      ) {
+        ) {
         return 2 * (delta / absDelta);
       }
 
@@ -154,7 +157,7 @@ qx.Bootstrap.define("qx.util.Wheel", {
     /**
      * Recalculates the factor with which the calculated delta is normalized.
      */
-    __recalculateMultiplicator : function() {
+    __recalculateMultiplicator: function () {
       var max = qx.util.Wheel.MAXSCROLL || 0;
       var min = qx.util.Wheel.MINSCROLL || max;
       if (max <= min) {

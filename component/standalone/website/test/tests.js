@@ -23,6 +23,28 @@ testrunner.globalTeardown = function() {
   this.sandbox.remove();
 };
 
+testrunner.createMouseEvent = function(type) {
+  var domEvent;
+  if (qx.core.Environment.get("event.customevent")) {
+    domEvent = new MouseEvent(type, {
+      canBubble: true,
+      cancelable: true,
+      view: window,
+    });
+    domEvent.initMouseEvent(type, true, true, window,
+                           1, 0, 0, 0, 0,
+                           false, false, false, false,
+                           0, null);
+  } else if (document.createEvent) {
+    domEvent = document.createEvent("UIEvents");
+    domEvent.initEvent(type, true, true);
+  } else if (document.createEventObject) {
+    domEvent = document.createEventObject();
+    domEvent.type = type;
+  }
+  return domEvent;
+};
+
 testrunner.define({
   classname: "Basic",
 
@@ -1628,14 +1650,8 @@ testrunner.define({
     this.assertEquals("affe", test[0].getAttribute("id"));
     this.assertEquals("affe", test.getAttribute("id"));
     test.removeAttribute("id");
-    if (q.env.get("engine.name") == "mshtml" && q.env.get("browser.documentmode") < 8) {
-      this.assertEquals("", test[0].getAttribute("id"));
-      this.assertEquals("", test.getAttribute("id"));
-    }
-    else {
-      this.assertNull(test[0].getAttribute("id"));
-      this.assertNull(test.getAttribute("id"));
-    }
+    this.assertNull(test[0].getAttribute("id"));
+    this.assertNull(test.getAttribute("id"));
 
     // must be ignored:
     q([window, document]).setAttribute("id", "affe");
@@ -1651,14 +1667,7 @@ testrunner.define({
     this.assertEquals("affe", test.getAttributes(["id", "x"]).id);
     this.assertEquals("y", test.getAttributes(["id", "x"]).x);
     test.removeAttributes(["id", "x"]);
-
-    // removed attributes have empty string values in old IEs
-    if (q.env.get("engine.name") == "mshtml" && q.env.get("browser.documentmode") < 8) {
-      this.assertEquals("", test.getAttributes(["id", "x"]).id);
-    }
-    else {
-      this.assertNull(test.getAttributes(["id", "x"]).id);
-    }
+    this.assertNull(test.getAttributes(["id", "x"]).id);
     this.assertNull(test.getAttributes(["id", "x"]).x);
   },
 
@@ -2463,6 +2472,23 @@ testrunner.define({
     this.assertNotNull(test[0].$$pointerHandler);
     test.off("pointerup", cb);
     this.assertNull(test[0].$$pointerHandler);
+  },
+
+  testNativeBubbling : function() {
+    this.sandbox.on("pointerdown", function() {});
+    q(document).on("mousedown", function(e) {
+      this.resume(function() {
+        this.assertEquals("mousedown", e.getType());
+      }, this);
+    }, this);
+
+    setTimeout(function() {
+      var domEvent = testrunner.createMouseEvent("mousedown");
+      this.sandbox[0].dispatchEvent ?
+        this.sandbox[0].dispatchEvent(domEvent) :
+        this.sandbox[0].fireEvent("onmousedown", domEvent);
+    }.bind(this), 100);
+    this.wait(250);
   }
 });
 
@@ -3546,6 +3572,42 @@ testrunner.define({
     },100);
 
     this.wait(1000);
+  },
+
+  testMediaQueryMatches: function () {
+    var iframe = this.__iframe[0];
+    this.sandbox.mediaQueryToClass("only screen", "testMediaQueryMatches", iframe.contentWindow);
+
+    this.assertTrue(this.sandbox.hasClass("testMediaQueryMatches"));
+  },
+
+  testMediaQueryNotMatches: function () {
+    var iframe = this.__iframe[0];
+    this.sandbox.mediaQueryToClass("only print", "testMediaQueryNotMatches", iframe.contentWindow);
+
+    this.assertFalse(this.sandbox.hasClass("testMediaQueryNotMatches"));
+  },
+
+  testMediaQueryMatchesAfterResizing: function () {
+    var sandbox = this.sandbox;
+    var iframe = this.__iframe[0];
+
+    sandbox.mediaQueryToClass(
+      "only screen and (min-width: 40.063em)",
+      "testMediaQueryMatchesAfterResizing",
+      iframe.contentWindow
+    );
+    iframe.width = 200;
+    this.assertFalse(sandbox.hasClass("testMediaQueryMatchesAfterResizing"));
+    iframe.width = 800;
+
+    window.setTimeout(function(){
+      this.resume(function (){
+        this.assertTrue(sandbox.hasClass("testMediaQueryMatchesAfterResizing"));
+      }, this);
+    }.bind(this), 100);
+
+    this.wait(1000);
   }
 
 });
@@ -4076,6 +4138,48 @@ testrunner.define({
 });
 
 
+testrunner.define({
+  classname: "ObjectUtil",
+
+  setUp : testrunner.globalSetup,
+  tearDown : testrunner.globalTeardown,
+
+  testObjectMerge : function() {
+
+    var target = {
+      name: 'vanillebaer',
+      test: {
+        foo: 'bar'
+      }
+    };
+
+    var source = {
+      surname: 'flachzange',
+      test: {
+        bar: 'baz'
+      }
+    };
+
+    var source2 = {
+      middlename: 'bambi',
+      secondTest: [ 0, 1, 2 ]
+    };
+
+    var result = q.object.merge(target, source, source2);
+
+    this.assertObject(result, 'Result value has to be an object!');
+    this.assertKeyInMap('name', result);
+    this.assertKeyInMap('surname', result);
+    this.assertKeyInMap('test', result);
+    this.assertEquals(result.test, source.test);
+
+    this.assertKeyInMap('middlename', result);
+    this.assertKeyInMap('secondTest', result);
+    this.assertArrayEquals(result.secondTest, [0, 1, 2]);
+  }
+});
+
+
 
 /* **************
  * WIDGETS
@@ -4495,6 +4599,21 @@ testrunner.define({
     this.assertException(function() {
       cal.setValue(new Date(2014, 1, 2));
     });
+  },
+
+  testPersistEnabled : function() {
+    var slider = q("#sandbox").slider()
+    this.assertTrue(slider.getEnabled());
+    this.assertFalse(slider.getAttribute("disabled"));
+    this.assertFalse(slider.find("button").getAttribute("disabled"));
+    slider.setEnabled(false);
+    this.assertFalse(slider.getEnabled());
+    this.assertTrue(slider.getAttribute("disabled"));
+    this.assertTrue(slider.find("button").getAttribute("disabled"));
+    slider.render();
+    this.assertFalse(slider.getEnabled());
+    this.assertTrue(slider.getAttribute("disabled"));
+    this.assertTrue(slider.find("button").getAttribute("disabled"));
   }
 });
 
@@ -4650,8 +4769,10 @@ testrunner.define({
     this.assertTrue(tabs.hasClass("qx-tabs"));
     this.assertEquals(1, tabs.getChildren().length);
     this.assertTrue(tabs.getChildren().eq(0).is("ul"));
-    this.assertFalse(tabs.getChildren().eq(0).hasClass("qx-tabs-justify"));
-    this.assertFalse(tabs.getChildren().eq(0).hasClass("qx-tabs-right"));
+    if (q.env.get("engine.name") != "mshtml" || q.env.get("browser.documentmode") > 9) {
+      this.assertTrue(tabs.hasClass("qx-flex-ready"));
+      this.assertTrue(tabs.getChildren().eq(0).hasClass("qx-hbox"));
+    }
   },
 
   testConstructorWithDom : function() {
@@ -4661,11 +4782,6 @@ testrunner.define({
     this.assertTrue(tabs.find("ul li").getFirst().hasClass("qx-tabs-button-active"));
     this.assertEquals("block", tabs.find("#cont1").getStyle("display"));
     this.assertEquals("none", tabs.find("#cont0").getStyle("display"));
-  },
-
-  testMultipleInstances : function() {
-    var tabs = q("#sandbox").tabs("right");
-    this.assertTrue(q("#sandbox").getChildren().eq(0).hasClass("qx-tabs-right"));
   },
 
   testAddButton : function() {
@@ -4713,17 +4829,46 @@ testrunner.define({
   },
 
   testJustify : function() {
-    var tabs = q("#sandbox").tabs("justify");
-    this.assertTrue(tabs.getChildren().eq(0).hasClass("qx-tabs-justify"));
-    tabs.setConfig("align", "left").render();
-    this.assertFalse(tabs.getChildren().eq(0).hasClass("qx-tabs-justify"));
+    var tabs = q.create('<div><ul><li class="qx-tabs-button" data-qx-tabs-page="#page1">Page 1</li></ul><div class="qx-tabs-container"><div id="page1" class="qx-tabs-page">Page 1 Content</div></div></div>')
+    .appendTo("#sandbox").tabs();
+    if (q.env.get("engine.name") == "mshtml" && q.env.get("browser.documentmode") < 10) {
+      this.assertFalse(tabs.hasClass("qx-tabs-justify"));
+      tabs.setConfig("align", "justify").render();
+      this.assertTrue(tabs.hasClass("qx-tabs-justify"));
+    } else {
+      this.assertTrue(tabs.find(".qx-flex1").length == 0);
+      tabs.setConfig("align", "justify").render();
+      this.assertTrue(tabs.find(".qx-flex1").length == 1);
+    }
   },
 
   testRight : function() {
     var tabs = q("#sandbox").tabs("right");
-    this.assertTrue(tabs.getChildren().eq(0).hasClass("qx-tabs-right"));
-    tabs.setConfig("align", "left").render();
-    this.assertFalse(tabs.getChildren().eq(0).hasClass("qx-tabs-right"));
+    if (q.env.get("engine.name") == "mshtml" && q.env.get("browser.documentmode") < 10) {
+      this.assertTrue(tabs.hasClass("qx-tabs-right"))
+      tabs.setConfig("align", "left").render();
+      this.assertFalse(tabs.hasClass("qx-tabs-right"));
+    } else {
+      this.assertTrue(tabs.getChildren().eq(0).hasClass("qx-flex-justify-end"));
+      tabs.setConfig("align", "left").render();
+      this.assertFalse(tabs.getChildren().eq(0).hasClass("qx-flex-justify-end"));
+    }
+  },
+
+  testPersistEnabled : function() {
+    var tabs = q.create('<div><ul><li class="qx-tabs-button" data-qx-tabs-page="#page1"><button>Page 1</button></li></ul><div class="qx-tabs-container"><div id="page1" class="qx-tabs-page">Page 1 Content</div></div></div>')
+    .appendTo("#sandbox").tabs();
+    this.assertTrue(tabs.getEnabled());
+    this.assertFalse(tabs.getAttribute("disabled"));
+    this.assertFalse(tabs.find("button").getAttribute("disabled"));
+    tabs.setEnabled(false);
+    this.assertFalse(tabs.getEnabled());
+    this.assertTrue(tabs.getAttribute("disabled"));
+    this.assertTrue(tabs.find("button").getAttribute("disabled"));
+    tabs.render();
+    this.assertFalse(tabs.getEnabled());
+    this.assertTrue(tabs.getAttribute("disabled"));
+    this.assertTrue(tabs.find("button").getAttribute("disabled"));
   }
 });
 
@@ -4799,5 +4944,19 @@ testrunner.define({
     this.assertEquals(0, icon.length);
 
     datepicker.dispose();
+  },
+
+  testPersistEnabled : function() {
+    var sandbox = q("#sandbox");
+    sandbox.append("<input type='text' class='datepicker' data-qx-class='qx.ui.website.DatePicker' value='' />");
+    var datepicker = q("input.datepicker").datepicker();
+    this.assertTrue(datepicker.getEnabled());
+    this.assertFalse(datepicker.getAttribute("disabled"));
+    datepicker.setEnabled(false);
+    this.assertFalse(datepicker.getEnabled());
+    this.assertTrue(datepicker.getAttribute("disabled"));
+    datepicker.render();
+    this.assertFalse(datepicker.getEnabled());
+    this.assertTrue(datepicker.getAttribute("disabled"));
   }
 });
