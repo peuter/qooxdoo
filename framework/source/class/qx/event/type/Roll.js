@@ -61,7 +61,7 @@ qx.Class.define("qx.event.type.Roll",
        * Stops the momentum events.
        */
       stopMomentum : function() {
-        if (this._native.timeoutId) {
+        if (this._native.timeoutId && this._originalTarget) {
           qx.event.Registration.getManager(this._originalTarget)
             .getHandler(qx.event.handler.Gesture)
             .stopMomentum(this._native.timeoutId);
