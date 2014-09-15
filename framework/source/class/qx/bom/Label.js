@@ -144,7 +144,15 @@ qx.Bootstrap.define("qx.bom.Label",
       {
         styles.overflow = "hidden";
         styles.whiteSpace = "nowrap";
-        styles[qx.core.Environment.get("css.textoverflow")] = "ellipsis";
+
+        // Bug #8516. iOS 8 has a bug to render the ellipsis even if the text
+        // fits in the available space. There's no better workaround right now
+        // to just clip the text. In this case it is shown completely.
+        if (qx.core.Environment.get("os.name") == "ios" && parseInt(qx.core.Environment.get("os.version"), 10) >= 8) {
+          styles[qx.core.Environment.get("css.textoverflow")] = "clip";
+        } else {
+          styles[qx.core.Environment.get("css.textoverflow")] = "ellipsis";
+        }
       }
 
       return styles;
