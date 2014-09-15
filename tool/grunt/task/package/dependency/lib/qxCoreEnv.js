@@ -34,40 +34,92 @@ var path = require('path');
 var esprima = require('esprima');
 var estraverse = require('estraverse');
 var escodegen = require('escodegen');
+var _ = require('underscore');
+var glob = require('glob');
+var U2 = require('uglify-js');
 
 // local (modules may be injected by test env)
 var util = (util || require('./util'));
 
-/**
- * Extracts values from <code>qx.Bootstrap.define().statics._checksMap</code>.
- *
- * @param {string} classCode - js code of Environment class.
- * @returns {Object} envKeys and envMethodNames
- */
-function getFeatureTable(classCode) {
 
-  function isFeatureMap (node) {
-    return (node.type === 'Property'
-      && node.key.type === 'Identifier'
-      && node.key.name === '_checksMap'
-      && node.value.type ===  'ObjectExpression'
-    );
+//------------------------------------------------------------------------------
+// Privates
+//------------------------------------------------------------------------------
+
+// privates may be injected by test env
+
+/**
+ * Global qx.core.Environment class code;
+ */
+var globalEnvClassCode = "";
+/**
+ * Global qx.bom.client.* class code map;
+ */
+var globalEnvKeyProvider = null;
+
+/**
+ * Extracts env keys (first argument) from
+ * <code>qx.core.Environment.add('engine.name', function(){ ... })</code> calls and
+ * stores them with their providing class (e.g. {'engine.name': 'qx.bom.client.Engine', 'engine.version': ...}).
+ *
+ * @param {Object} classCodeMap - js code of environment key provider classes e.g. {'qx.bom.client.Engine': 'long js code string'}
+ * @returns {Object} envKeys and envProviderClasses.
+ */
+function getFeatureTable(classCodeMap) {
+
+  function isQxCoreEnvAddCall (node) {
+    return (node.type === 'CallExpression'
+            && util.get(node, 'callee.object.object.object.name') === 'qx'
+            && util.get(node, 'callee.object.object.property.name') === 'core'
+            && util.get(node, 'callee.object.property.name') === 'Environment'
+            && util.get(node, 'callee.property.name') === 'add');
   }
 
   var featureMap = {};
-  // parse classCode
+  for (var className in classCodeMap) {
+    var tree = esprima.parse(classCodeMap[className]);
+
+    var controller = new estraverse.Controller();
+    controller.traverse(tree, {
+      enter : function (node, parent) {
+        if (isQxCoreEnvAddCall(node)) {
+          featureMap[getKeyFromEnvCall(node)] = className;
+        }
+      }
+    });
+  }
+
+  return featureMap;
+}
+
+/**
+ * Extracts values from <code>qx.Bootstrap.define().statics._defaults</code>.
+ *
+ * @param {string} classCode - js code of Environment class.
+ * @returns {Object} envKeys and envValues.
+ */
+function extractEnvDefaults(classCode) {
+  function isDefaultsMap (node) {
+    return (node.type === 'Property'
+      && node.key.type === 'Identifier'
+      && node.key.name === '_defaults'
+      && node.value.type === 'ObjectExpression'
+    );
+  }
+
+  var defaultsMap = {};
   var tree = esprima.parse(classCode);
 
-  // search feature map
   var controller = new estraverse.Controller();
   controller.traverse(tree, {
     enter : function (node, parent) {
-      if (isFeatureMap(node)) {
-        featureMap = node.value;
+      if (isDefaultsMap(node)) {
+        defaultsMap = node.value;
       }
     }
   });
-  return eval('(' + escodegen.generate(featureMap) + ')');
+
+  return eval('(' + escodegen.generate(defaultsMap) + ')');
 }
 
 /**
@@ -80,29 +132,95 @@ function getFeatureTable(classCode) {
  */
 function findVariantNodes(tree) {
   var result = [];
-  var interestingEnvMethods = {
-    'select'      : true,
-    'selectAsync' : true,
-    'get'         : true,
-    'getAsync'    : true,
-    'filter'      : true
-  };
 
-  // walk tree
   var controller = new estraverse.Controller();
   controller.traverse(tree, {
     enter : function (node, parent) {
-      // pick calls to qx.core.Environment.get|select|filter
-      if (node.type === 'CallExpression'
-          && util.get(node, 'callee.object.object.object.name') === 'qx'
-          && util.get(node, 'callee.object.object.property.name') === 'core'
-          && util.get(node, 'callee.object.property.name') === 'Environment'
-          && util.get(node, 'callee.property.name') in interestingEnvMethods) {
-            result.push(node);
+      if (isQxCoreEnvironmentCall(node)) {
+        result.push(node);
       }
     }
   });
   return result;
+}
+
+/**
+ * Figures out if node is call of qx.core.Environment.get|select|filter.
+ *
+ * @param {Object} node - esprima node
+ * @param {String[]} methodNames - method names to check for
+ * @returns {boolean}
+ * @see {@link http://esprima.org/doc/#ast|esprima AST}
+ */
+function isQxCoreEnvironmentCall(node, methodNames) {
+    var interestingEnvMethods = ['select', 'selectAsync', 'get', 'getAsync', 'filter'];
+    var envMethods = methodNames || interestingEnvMethods;
+
+    return (node.type === 'CallExpression'
+            && util.get(node, 'callee.object.object.object.name') === 'qx'
+            && util.get(node, 'callee.object.object.property.name') === 'core'
+            && util.get(node, 'callee.object.property.name') === 'Environment'
+            && envMethods.indexOf(util.get(node, 'callee.property.name')) !== -1);
+}
+
+/**
+ * Replaces get env calls with the computed value.
+ *
+ * @param {Object} tree - esprima AST
+ * @param {Object} envMap - environment settings
+ * @returns {Object} resultTree - manipulated (desctructive) esprima AST
+ * @see {@link http://esprima.org/doc/#ast|esprima AST}
+ */
+function replaceEnvCallGet(tree, envMap) {
+  var controller = new estraverse.Controller();
+  var resultTree = controller.replace(tree, {
+    enter : function (node, parent) {
+      if (isQxCoreEnvironmentCall(node, ["get"])) {
+        var envKey = getKeyFromEnvCall(node);
+        if (envMap && envKey in envMap) {
+          return {
+            "type": "Literal",
+            "value": envMap[envKey],
+            "raw": ((typeof(envMap[envKey]) === "string")
+                   ? "\""+envMap[envKey]+"\""
+                   : envMap[envKey].toString())
+          };
+        }
+      }
+    }
+  });
+
+  return resultTree;
+}
+
+/**
+ * Replaces select env calls with the computed value.
+ *
+ * @param {Object} tree - esprima AST
+ * @param {Object} envMap - environment settings
+ * @returns {Object} resultTree - manipulated (desctructive) esprima AST
+ * @see {@link http://esprima.org/doc/#ast|esprima AST}
+ */
+function replaceEnvCallSelect(tree, envMap) {
+  var controller = new estraverse.Controller();
+  var resultTree = controller.replace(tree, {
+    enter : function (node, parent) {
+      if (isQxCoreEnvironmentCall(node, ["select"])) {
+        var envKey = getKeyFromEnvCall(node);
+        try {
+          return getEnvSelectValueByKey(node, envMap[envKey]);
+        } catch (error) {
+          // intentionally empty
+          // => no return means no replacement
+          // possible reasons:
+          //   * envMap has no envKey because the envKey is runtime based (os.version)
+          //     and cannot be configured upfront.
+        }
+      }
+    }
+  });
+
+  return resultTree;
 }
 
 /**
@@ -171,7 +289,7 @@ function addEnvCallDependency(fqMethodName, node, result) {
  * @param {Object} callNode - esprima AST call node
  * @returns {String} method name
  */
-function getEnvMethod(callNode) {
+function getMethodFromEnvCall(callNode) {
   // brute force, expecting 'CallExpression'
   return util.get(callNode, 'callee.property.name');
 
@@ -183,8 +301,40 @@ function getEnvMethod(callNode) {
  * @param {Object} callNode - esprima AST call node
  * @returns {String} env key
  */
-function getEnvKey(callNode) {
+function getKeyFromEnvCall(callNode) {
   return util.get(callNode, 'arguments.0.value');
+}
+
+/**
+ * Gets the select 'body' from a <code>qx.core.Environment.select('foo', {...})</code> call.
+ *
+ * @param {Object} callNode - esprima AST call node
+ * @param {String} key - key which will be used for value extraction of select 'body'
+ * @throws {Error} ENOENT
+ */
+function getEnvSelectValueByKey(callNode, key) {
+  var properties = util.get(callNode, 'arguments.1.properties');
+  var selectedValue = "initial";
+  var defaultValue = "initial";
+
+  var i = 0;
+  var l = properties.length;
+  while (l--) {
+    if (properties[l].key.value === key.toString()) {
+      selectedValue = properties[l].value;
+    }
+    if (properties[l].key.value === "default") {
+      defaultValue = properties[l].value;
+    }
+  }
+
+  if (selectedValue !== "initial") {
+    return selectedValue;
+  } else if (defaultValue !== "initial") {
+    return defaultValue;
+  } else {
+    throw new Error("ENOENT - Given value matches no key from select map and no 'default' key defined.");
+  }
 }
 
 /**
@@ -193,9 +343,42 @@ function getEnvKey(callNode) {
  * @returns {string} js code
  */
 function getClassCode() {
-  return fs.readFileSync(fs.realpathSync(
-    path.join(__dirname, '../../../../../../framework/source/class/qx/core/Environment.js')),
-    {encoding: 'utf-8'});
+  if (!globalEnvClassCode) {
+    globalEnvClassCode = fs.readFileSync(fs.realpathSync(
+      path.join(__dirname, '../../../../../../framework/source/class/qx/core/Environment.js')),
+      {encoding: 'utf-8'}
+    );
+  }
+  return globalEnvClassCode;
+}
+
+/**
+ * Provides the js code of all classes in the namespace <code>qx.bom.client</code>
+ * cause they are potentially environment key(s) (e.g. 'egine.name') provider.
+ *
+ * @returns {Object} class name to js code mapping
+ */
+function getEnvKeyProviderCode() {
+  if (!globalEnvKeyProvider) {
+    globalEnvKeyProvider = {};
+    var qxBomClient = path.join(__dirname, '../../../../../../framework/source/class/qx/bom/client/');
+    var envKeyProviderClassNames = glob.sync('*', {cwd: qxBomClient});
+    var l = envKeyProviderClassNames.length;
+    for (var i=0; i<l; i++) {
+      var cur = envKeyProviderClassNames[i];
+
+      if (cur === '__init__.js') {
+        continue;
+      }
+
+      globalEnvKeyProvider['qx.bom.client.'+cur.replace('.js', '')] = fs.readFileSync(fs.realpathSync(
+        path.join(qxBomClient, cur),
+        {encoding: 'utf-8'})
+      );
+    }
+  }
+
+  return globalEnvKeyProvider;
 }
 
 //------------------------------------------------------------------------------
@@ -205,52 +388,65 @@ function getClassCode() {
 module.exports = {
 
   /**
+   * Optimizes env calls (i.e. replaces their call with the computed value).
+   *
+   * @param {Object} tree - esprima AST
+   * @param {Object} envMap - environment settings
+   * @returns {Object} resultTree - manipulated esprima AST
+   */
+  optimizeEnvCall: function(tree, envMap) {
+    if (!envMap) {
+      envMap = {};
+    }
+
+    var envDefaults = extractEnvDefaults(getClassCode());
+    // envMap is second param because its values
+    // should override the defaults from the framework
+    var mergedEnvMap = _.extend(envDefaults, envMap);
+
+    var resultTree = tree;
+    resultTree = replaceEnvCallGet(resultTree, mergedEnvMap);
+    resultTree = replaceEnvCallSelect(resultTree, mergedEnvMap);
+    return resultTree;
+  },
+
+  /**
    * Takes an esprima AST and returns the list of feature classes used through
    * <code>qx.core.Environment.*</code> calls
    *
    * @param {Object} tree - esprima AST
    * @param {Object[]} scopeRefs - scope references
-   * @param {boolean} [withMethodName=false] - whether feature classes should be added with method name
    * @returns {Object} result
    * @returns {String[]} result.run
    * @returns {String[]} result.load
    * @see {@link http://constellation.github.io/escope/Reference.html|Reference class}
    * @see {@link http://esprima.org/doc/#ast|esprima AST}
    */
-  extract: function(tree, scopeRefs, withMethodName) {
+  extract: function(tree, scopeRefs) {
     var result = {
       'load': [],
       'run': []
     };
     var featureToClass = {};
     var envCallNodes = [];
-    var qxCoreEnvCode = "";
 
-    withMethodName = withMethodName || false;
-    qxCoreEnvCode = qxCoreEnvCode || getClassCode();
-
-    // { 'plugin.flash' : 'qx.bom.client.Flash#isAvailable', 'nextKey': ... }
-    featureToClass = getFeatureTable(qxCoreEnvCode);
+    // { 'plugin.flash' : 'qx.bom.client.Flash', 'foo.bar': ... }
+    featureToClass = getFeatureTable(getEnvKeyProviderCode());
 
     envCallNodes = findVariantNodes(tree);
 
     if (envCallNodes.length >= 1) {
       envCallNodes = addLoadRunInformation(envCallNodes, scopeRefs);
       envCallNodes.forEach(function (node) {
-        if (getEnvMethod(node) in {select:1, get:1, filter:1}) {
+        if (getMethodFromEnvCall(node) in {select:1, get:1, filter:1}) {
           // extract environment key
-          var env_key = getEnvKey(node);
+          var envKey = getKeyFromEnvCall(node);
           // look up corresponding feature class
-          var fqMethodName = featureToClass[env_key];
+          var fqMethodName = featureToClass[envKey];
           if (fqMethodName) {
             // add to result
-            // console.log(tree.qxClassName, env_key + ' : ' + featureToClass[env_key]);
-            if (!withMethodName) {
-              var posOfLastDot = fqMethodName.lastIndexOf('.');
-              result = addEnvCallDependency(fqMethodName.substr(0, posOfLastDot), node, result);
-            } else {
-              result = addEnvCallDependency(fqMethodName, node, result);
-            }
+            // console.log(tree.qxClassName, envKey, featureToClass[envKey]);
+            result = addEnvCallDependency(fqMethodName, node, result);
           }
         }
       });

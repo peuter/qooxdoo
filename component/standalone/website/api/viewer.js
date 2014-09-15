@@ -86,7 +86,10 @@ q.ready(function() {
     "Plugin_API"
   ];
 
+  var searchPopupShown = false;
   var onFilterInput = function() {
+    hideSearchPopup();
+
     var value = filterField.getValue();
 
     if (!value) {
@@ -111,8 +114,33 @@ q.ready(function() {
     debouncedHideFiltered(value);
   };
 
+  if (q.env.get("os.name") == "osx") {
+    q("#searchcmd").setHtml("cmd");
+  }
+
+  var showSearchPopup = function() {
+    if (!q.localStorage.getItem("qx-got-search") && !searchPopupShown) {
+      q("#searchpopup")
+        .placeTo(q(".filter")[0], "right-top", {left: 2, top: -5})
+        .show();
+      searchPopupShown = true;
+    }
+  };
+
+  var hideSearchPopup = function() {
+    q("#searchpopup").fadeOut();
+  };
+
+  q("#gotsearch").on("tap", function() {
+    q.localStorage.setItem("qx-got-search", true);
+  });
+
   var filterField = q(".filter input");
-  filterField.on("input", onFilterInput);
+  filterField.on("input", onFilterInput).on("focus", showSearchPopup).on("blur", function() {
+    window.setTimeout(function() {
+      hideSearchPopup();
+    }, 200);
+  });
 
   var debouncedHideFiltered = q.func.debounce(function(value) {
     hideFiltered(value);
@@ -129,14 +157,40 @@ q.ready(function() {
       var groupResults = 0;
       groupButton = q(groupButton);
       var groupPage = groupButton.getNext();
-      groupPage.find("> ul > li").forEach(function(item) {
+
+      // use the method names together with the navigation headers as source for filtering
+      // e.g. if the developer filters for "css" all methods for the module are listed
+      var searchItems = groupPage.find('> a').concat(groupPage.find('> ul > li'));
+      searchItems.forEach(function(item) {
+
+        var isHeader = q.getNodeName(item) === 'a';
         item = q(item);
-        var methodName = item.getChildren("a").getHtml();
-        if (regEx.exec(methodName)) {
-          groupResults++;
-          item.show(); // method items
-          item.getParents().show(); // method lists
-          item.getParents().getPrev().show(); // module headers
+
+        var itemName = isHeader ? item.getChildren('h2').getHtml() : item.getChildren("a").getHtml();
+        if (regEx.exec(itemName)) {
+
+          if (isHeader) {
+            // the count of the methods is the group result
+            groupResults += item.getNext().getChildren().length;
+
+            item.show(); // header
+            item.getNext().show(); // method list container
+            item.getNext().getChildren().show(); // methods
+
+          } else {
+
+            // only count the methods if they are not already shown
+            // this might happen if the module header is part of the filter result
+            // otherwise the count of the result is doubled
+            if (item.getStyle('display') === 'none') {
+
+              groupResults++;
+
+              item.show(); // method item
+              item.getParents().show(); // method lists
+              item.getParents().getPrev().show(); // module headers
+            }
+          }
         }
       });
       groupButton.setData("results", groupResults);
@@ -193,7 +247,6 @@ q.ready(function() {
   var renderListModule = function(id, data) {
     var name = id.replace(/_/g, " ");
     var checkMissing = q.$$qx.core.Environment.get("apiviewer.check.missingmethods");
-    var className = convertNameToCssClass(id, "nav-");
 
     var factoryName;
     var ul = q.create("<ul></ul>");
@@ -203,12 +256,22 @@ q.ready(function() {
       if (checkMissing !== false) {
         missing = isMethodMissing(methodName, data.classname);
       }
+
+      var deprecated = data.deprecated;
+      if (deprecated !== true) {
+        var deprecatedStatus = Data.getByType(methodAst, "deprecated");
+        if (deprecatedStatus.children.length > 0) {
+          deprecated = true;
+        }
+      }
+
       q.template.get("list-item", {
         name: methodName + "()",
         classname: convertNameToCssClass(methodName, "nav-"),
         missing: missing,
         link: methodName,
-        plugin: methodAst.attributes.plugin
+        plugin: methodAst.attributes.plugin,
+        deprecated: deprecated
       }).appendTo(ul);
     });
 
@@ -219,14 +282,23 @@ q.ready(function() {
       if (methodIsFactory) {
         return;
       }
-
       var missing = isMethodMissing(methodName, data.classname);
+
+      var deprecated = data.deprecated;
+      if (deprecated !== true) {
+        var deprecatedStatus = Data.getByType(methodAst, "deprecated");
+        if (deprecatedStatus.children.length > 0) {
+          deprecated = true;
+        }
+      }
+
       q.template.get("list-item", {
         name: methodName + "()",
         classname: convertNameToCssClass(methodName, "nav-"),
         missing: missing,
         link: methodName,
-        plugin: methodAst.attributes.plugin
+        plugin: methodAst.attributes.plugin,
+        deprecated: deprecated
       }).appendTo(ul);
     });
 
@@ -246,9 +318,10 @@ q.ready(function() {
 
     if (name !== "Core") {
       var headerText = factoryName || name;
-      var header = q.create('<h2 class="nav-' + id + '">' + headerText + '</h2>');
+      var deprecatedClass = data.deprecated ? ' class-deprecated' : '';
+      var header = q.create('<h2 class="nav-' + id + deprecatedClass + '">' + headerText + '</h2>');
       groupPage.append(q.create('<a href="#' + id + '"></a>').append(header));
-			qxWeb.messaging.emit('apiviewer', 'moduleRendered', null, {id : id, data : data, header : header});
+      qxWeb.messaging.emit('apiviewer', 'moduleRendered', null, {id : id, data : data, header : header});
     }
 
     groupPage.append(ul);
@@ -358,8 +431,9 @@ q.ready(function() {
       groupEl = q.create('<div id="group_' + group + '"></div>').appendTo("#content");
     }
 
+    var deprecatedClass = data.deprecated ? 'class-deprecated' : '';
     var module = q.create("<div class='module'>").appendTo(groupEl);
-    module.append(q.create("<h1 " + groupIcon + "id='" + name + "'>" + name.replace(/_/g, " ") + "</h1>"));
+    module.append(q.create("<h1 " + groupIcon + "id='" + name + "' class='" + deprecatedClass + "'>" + name.replace(/_/g, " ") + "</h1>"));
 
     if (data.superClass) {
       var newName = data.superClass.split(".");
@@ -409,9 +483,13 @@ q.ready(function() {
     }
 
     data["static"].forEach(function(method) {
+      method.deprecated = data.deprecated;
+      method.deprecatedMessage = data.deprecatedMessage;
       module.append(renderMethod(method, data.prefix));
     });
     data["member"].forEach(function(method) {
+      method.deprecated = data.deprecated;
+      method.deprecatedMessage = data.deprecatedMessage;
       var methodDoc = renderMethod(method, data.prefix);
       if (Data.isFactory(method, name)) {
         methodDoc.addClass("factory");
@@ -497,6 +575,20 @@ q.ready(function() {
     if (data.plugin) {
       data.icon = icons["Plugin_API"];
       data.title = "Plugin API";
+    }
+
+    // add deprecated status
+    data.deprecated = method.deprecated;
+    data.deprecatedMessage = method.deprecatedMessage;
+
+    if (data.deprecated !== true) {
+      var deprecatedStatus = Data.getByType(method, "deprecated");
+      if (deprecatedStatus.children.length > 0) {
+        var deprecatedDescription = Data.getByType(deprecatedStatus, "desc");
+        var deprecatedMessage = deprecatedDescription.attributes.text;
+        data.deprecated = true;
+        data.deprecatedMessage = deprecatedMessage.length > 0 ? deprecatedMessage : '<p>Deprecated</p>';
+      }
     }
 
     return q.template.get("method", data);
@@ -615,24 +707,22 @@ q.ready(function() {
   // no highlighting for IE < 9
   var useHighlighter = !(q.env.get("engine.name") == "mshtml" && q.env.get("browser.documentmode") < 9);
 
+  // setup variables to use them within the callbacks
+  var acc = null;
+  var buttonTops = null;
+  var requestAnimationFrame = qxWeb.$$qx.bom.AnimationFrame.request;
+
   var onContentReady = function() {
     renderList(this);
     sortList();
-    renderContent(this);
-    loadSamples();
-    var acc = q("#list").tabs(null, null, "vertical").render();
+
+    acc = q("#list").tabs(null, null, "vertical").render();
+
+    // decouple the creation of the content by using the next possible AnimationFrame
+    requestAnimationFrame(delayedRenderContent, this);
 
     // wait for the tab pages to be measured
-    var buttonTops;
     var listOffset = q("#list").getPosition().top;
-
-    setTimeout(function() {
-      acc.fadeIn(200);
-      buttonTops = [];
-      acc.find(".qx-tabs-button").forEach(function(button, index) {
-        buttonTops[index] = (q(button).getPosition().top);
-      });
-    }, 200);
 
     acc.on("changeSelected", function(index) {
       var buttonTop = buttonTops[index] - listOffset;
@@ -647,11 +737,6 @@ q.ready(function() {
         }
       });
     });
-
-    // enable syntax highlighting
-    if (useHighlighter) {
-      q('pre').forEach(function(el) {hljs.highlightBlock(el);});
-    }
 
     if (q(".filter input").getValue()) {
       setTimeout(onFilterInput, 200);
@@ -673,6 +758,79 @@ q.ready(function() {
     navItems.addClass("selected");
   };
 
+  var delayedRenderContent = function() {
+    renderContent(this);
+
+    requestAnimationFrame(delayedAccordionFadeIn, this);
+  };
+
+  var delayedAccordionFadeIn = function() {
+    acc.fadeIn(200);
+    buttonTops = [];
+    acc.find(".qx-tabs-button").forEach(function(button, index) {
+      buttonTops[index] = (q(button).getPosition().top);
+    });
+
+    requestAnimationFrame(delayedLoadSamples, this);
+  };
+
+  var delayedLoadSamples = function() {
+    loadSamples();
+
+    // enable syntax highlighting
+    if (useHighlighter) {
+      window.setTimeout(highLightCodeBlocks, 2000);
+    }
+  };
+
+
+  var codeBlocks = null;
+  var highLightCodeBlocks = function() {
+    codeBlocks = q('pre');
+
+    var content = q('div#content');
+    content.on('scroll', qxWeb.func.debounce(highLightOnScroll.bind(content), 500));
+
+    // highlight the current viewport at startup once
+    highLightOnScroll.call(content);
+  };
+
+  var highLightOnScroll = function() {
+
+    var height = parseInt(this.getHeight(), 10);
+
+    var toRemove = [];
+    codeBlocks.every(function(item, index) {
+
+      var boundingRect = item.getBoundingClientRect();
+
+      // code element is above us -> skip it
+      if (parseInt(boundingRect.top, 10) < 0) {
+        return true;
+      }
+
+      // candidate for highlighting
+      if ((parseInt(boundingRect.top, 10) >= 0 && parseInt(boundingRect.top, 10) < height) ||
+          (parseInt(boundingRect.bottom, 10) >= 0 && parseInt(boundingRect.bottom, 10) < height)) {
+
+        hljs.highlightBlock(item);
+
+        toRemove.push(index);
+        return true;
+      }
+
+      // fast check if the code element is out of viewport (further down)
+      // -> we can stop here
+      if (parseInt(boundingRect.top, 10) > height) {
+        return false;
+      }
+
+    });
+
+    toRemove.reverse().forEach(function(item) {
+      codeBlocks.splice(item, 1);
+    });
+  };
 
   var loadSamples = function() {
     q.io.script("script/samples.js").send();
@@ -736,14 +894,6 @@ q.ready(function() {
         cssEl,
         jsEl;
 
-    var precedingSamples = header.getSiblings(".sample");
-    if (precedingSamples.length > 0) {
-      sampleEl.insertAfter(precedingSamples.eq(precedingSamples.length - 1));
-    }
-    else {
-      sampleEl.insertAfter(header);
-    }
-
     var codeContainer = q.create("<div class='samplecode'></div>").appendTo(sampleEl);
 
     var stringifyArraySnippet = function (snippet) {
@@ -787,16 +937,19 @@ q.ready(function() {
       codeContainer.append(jsEl);
     }
 
-    if (useHighlighter) {
-      htmlEl && hljs.highlightBlock(htmlEl);
-      cssEl && hljs.highlightBlock(cssEl);
-      jsEl && hljs.highlightBlock(jsEl);
-    }
-
     addMethodLinks(jsEl, header.getParents().getAttribute("id"));
 
-    if (sample.executable && q.env.get("engine.name") != "mshtml" && q.env.get("device.type") == "desktop") {
-      createFiddleButton(sample).appendTo(sampleEl);
+    if (sample.executable) {
+      createCodepenButton(sample).appendTo(sampleEl);
+    }
+
+    // Add the created DOM elements at the end to minimize DOM access
+    var precedingSamples = header.getSiblings(".sample");
+    if (precedingSamples.length > 0) {
+      sampleEl.insertAfter(precedingSamples.eq(precedingSamples.length - 1));
+    }
+    else {
+      sampleEl.insertAfter(header);
     }
   };
 
@@ -828,31 +981,34 @@ q.ready(function() {
     qVersion + ".min.js";
   var indigoUrl = "http://demo.qooxdoo.org/" + qVersion + "/framework/indigo-" +
       qVersion + ".css";
-  var qScript = '<script type="text/javascript" src="' + qUrl + '"></script>';
-  var indigoLink = '<link rel="stylesheet" type="text/css" href="' + indigoUrl + '"/>';
 
-  var createFiddleButton = function(sample) {
-    return q.create("<button class='fiddlebutton'>Edit/run on jsFiddle</button>").on("tap", function() {
-      var iframeBody = q(q("#fiddleframe")[0].contentWindow.document.body);
+  var createCodepenButton = function (sample) {
+    var data = {
+      js_external: qUrl,
+      css_external: indigoUrl
+    };
 
-      if (sample.javascript) {
-        iframeBody.find("#js").setAttribute("value", sample.javascript);
-      }
+    if (sample.javascript) {
+      data.js = sample.javascript;
+    }
 
-      if (sample.css) {
-        iframeBody.find("#css").setAttribute("value", sample.css);
-      }
+    if (sample.css) {
+      data.css = sample.css;
+    }
 
-      if (sample.html) {
-        iframeBody.find("#html").setAttribute("value", sample.html);
-        iframeBody.find("#html").setAttribute("value", qScript + '\n' + indigoLink + '\n' + sample.html);
-      }
-      else {
-        iframeBody.find("#html").setAttribute("value", qScript);
-      }
+    if (sample.html) {
+      data.html = sample.html;
+    }
 
-      iframeBody.find("form")[0].submit();
-    });
+    var hiddenField = q.create('<input type="hidden" name="data" value="" />');
+    hiddenField.setValue(JSON.stringify(data));
+
+    var form = q.create('<form action="http://codepen.io/pen/define" method="POST" target="_blank">' +
+        '<input class="button-codepen" type="submit" value="Edit/run on CodePen">' +
+        '</form>'
+    );
+
+    return form.append(hiddenField);
   };
 
   var scrollContentIntoView = q.func.debounce(function() {
@@ -944,7 +1100,7 @@ q.ready(function() {
    * Adds sample code to a method's documentation. Code can be supplied wrapped in
    * a function or as a map with one or more of the keys js, css and html.
    * Additionally, a key named executable is supported: If the value is true, a
-   * button will be created that posts the sample's code to jsFiddle for live
+   * button will be created that posts the sample's code to CodePen for live
    * editing.
    *
    * @param methodName {String} Name of the method, e.g. ".before" or "q.create"

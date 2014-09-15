@@ -59,7 +59,8 @@ function renderLoaderTmpl(tmpl, ctx) {
     if (ctx[tmplVar] === "") {
       tmpl = tmpl.replace(regex, "");
     } if (ctx[tmplVar][0] === "_") {
-      // get rid of '_' and preserve dollar signs
+      // get rid of '_' as first char which is used
+      // to trigger preservation of dollar signs
       ctx[tmplVar] = ctx[tmplVar].substr(1).replace(/\$/g, "$$$$");
       tmpl = tmpl.replace(regex, ctx[tmplVar]);
     } else {
@@ -98,7 +99,8 @@ module.exports = function(grunt) {
 
     grunt.log.writeln('Collecting classes ...');
     // -----------------------------------------
-    var classesDeps = qxDep.collectDepsRecursive(classPaths, opts.includes, opts.excludes);
+    var depsCollectingOptions = {variants: true, cachePath: opts.cachePath, buildType: "build"};
+    var classesDeps = qxDep.collectDepsRecursive(classPaths, opts.includes, opts.excludes, opts.environment, depsCollectingOptions);
     grunt.log.ok('Done.');
 
 
@@ -166,10 +168,14 @@ module.exports = function(grunt) {
 
     grunt.log.writeln('Compress code ...');
     // ------------------------------------------------------
+
     var classCodeCompressedList = [];
+    var compressOpts = {privates: true, cachePath: opts.cachePath};
+    var curClass = "";
     for (var i=0, l=classCodeList.length; i<l; i++) {
       // console.log(i, l, classLoadOrderList[i]);
-      classCodeCompressedList.push(qxCpr.compress(classLoadOrderList[i], classCodeList[i]));
+      curClass = classLoadOrderList[i];
+      classCodeCompressedList.push(qxCpr.compress(curClass, classCodeList[i], opts.environment, compressOpts));
     }
     grunt.log.ok('Done.');
 

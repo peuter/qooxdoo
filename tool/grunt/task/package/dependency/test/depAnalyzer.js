@@ -39,7 +39,12 @@ module.exports = {
         classNameAnnotator: require('../lib/annotator/className'),
         loadTimeAnnotator: require('../lib/annotator/loadTime'),
         qxCoreEnv: require('../lib/qxCoreEnv'),
-        util: require('../lib/util')
+        util: require('../lib/util'),
+        qx: {
+          tool: {
+            Cache: require('../../../../lib/qx/tool/Cache')
+          }
+        }
       };
 
       this.depAnalyzer = sandbox('lib/depAnalyzer.js', boxGlobals);
@@ -511,7 +516,7 @@ module.exports = {
       var jsCode = fs.readFileSync(curFullPath, {encoding: 'utf8'});
       var tree = esprima.parse(jsCode, {comment: true, loc: true});
 
-      var actualClassDeps = this.depAnalyzer.findUnresolvedDeps(tree, {flattened: false});
+      var actualClassDeps = this.depAnalyzer.findUnresolvedDeps(tree, {}, {flattened: false, variants: false});
       var expectedClassDeps = {
         load: [
           'qx.Class',
@@ -543,7 +548,8 @@ module.exports = {
         {'myapp': './test/data/myapp/source/class/',
          'qx': '../../../../../framework/source/class/'},
         ['myapp.Application', 'myapp.theme.Theme'],
-        excludedClassIds
+        excludedClassIds,
+        {}
       );
 
       test.ok(Object.keys(classesDeps).length, 247);
@@ -728,6 +734,38 @@ module.exports = {
       test.done();
     },
 
+    getAbsFilePath: function(test) {
+      var actualOk = this.depAnalyzer.getAbsFilePath(
+        'myapp.Application',
+        {'myapp': './test/data/myapp/source/class/',
+         'qx': '../../../../../framework/source/class/'}
+      );
+
+      test.strictEqual(actualOk, "test/data/myapp/source/class/myapp/Application.js");
+
+      // ENOENT - Missing library
+      test.throws(
+        function() {
+          this.depAnalyzer.getAbsFilePath('myapp.Application', {});
+        },
+        Error
+      );
+
+      // ENOENT - Path doesn't exist
+      test.throws(
+        function() {
+          this.depAnalyzer.getAbsFilePath(
+            'myapp.Foo',
+            {'myapp': './test/data/myapp/source/class/',
+             'qx': '../../../../../framework/source/class/'}
+          );
+        },
+        Error
+      );
+
+      test.done();
+    },
+
     readFileContent: function(test) {
       var actualOk = this.depAnalyzer.readFileContent(
         ['myapp.Application', 'myapp.theme.Theme'],
@@ -736,26 +774,6 @@ module.exports = {
       );
 
       test.strictEqual(actualOk[0].substr(0, 4), "/* *");
-
-      // ENOENT - Missing library
-      test.throws(
-        function() {
-          this.depAnalyzer.readFileContent(['myapp.Application'], {});
-        },
-        Error
-      );
-
-      // ENOENT - Path doesn't exist
-      test.throws(
-        function() {
-          this.depAnalyzer.readFileContent(
-            ['myapp.Foo'],
-            {'myapp': './test/data/myapp/source/class/',
-            'qx': '../../../../../framework/source/class/'}
-          );
-        },
-        Error
-      );
 
       test.done();
     }

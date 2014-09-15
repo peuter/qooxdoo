@@ -60,10 +60,6 @@ qx.Bootstrap.define("qx.module.event.PointerHandler", {
         element["on" + type] = true;
       }
 
-      if (!element.__pointerListeners) {
-        element.__pointerListeners = 0;
-      }
-
       if (!element.$$pointerHandler) {
 
         if (!qx.core.Environment.get("event.dispatchevent")) {
@@ -74,8 +70,6 @@ qx.Bootstrap.define("qx.module.event.PointerHandler", {
 
         element.$$pointerHandler = new qx.event.handler.PointerCore(element, element.$$emitter);
       }
-
-      element.__pointerListeners++;
     },
 
 
@@ -85,12 +79,27 @@ qx.Bootstrap.define("qx.module.event.PointerHandler", {
      * @param element {Element} DOM element
      */
     unregister : function(element) {
+      // check if there are any registered listeners left
       if (element.$$pointerHandler) {
-        element.__pointerListeners--;
-        if (element.__pointerListeners === 0) {
-          element.$$pointerHandler.dispose();
-          element.$$pointerHandler = null;
+        // in a standalone or in-line application the pointer handler of
+        // document will be qx.event.handler.Pointer, do not dispose that handler.
+        // see constructor of qx.event.handler.Pointer
+        if (element.$$pointerHandler.classname === "qx.event.handler.Pointer") {
+          return;
         }
+
+        var listeners = element.$$emitter.getListeners();
+        for (var type in listeners) {
+          if (qx.module.event.PointerHandler.TYPES.indexOf(type) !== -1) {
+            if (listeners[type].length > 0) {
+              return;
+            }
+          }
+        }
+
+        // no more listeners, get rid of the handler
+        element.$$pointerHandler.dispose();
+        element.$$pointerHandler = undefined;
       }
     }
   },

@@ -73,6 +73,84 @@ winCollection.on("resize", q.func.debounce(resizeHandler, 500), winCollection);
   executable: true
 });
 
+
+addSample(".off", function() {
+// adding a handler to your collection (happened earlier)
+var myHandler = function(e) {
+  var target = e.getTarget();
+  // more code ...
+};
+q("#navigationBar").on("tap", myHandler);
+
+// removing the listener - it's important to remove it with the same arguments
+q("#navigationBar").off("tap", myHandler);
+
+// this WON'T remove the listener, since you hand in a different context
+// same for adding a listener with a context and forget to pass the third argument
+q("#navigationBar").off("tap", myHandler, window); // WRONG: listener still there
+});
+
+
+addSample(".allOff", function() {
+// before removing DOM elements, remove *all tap* listeners
+q("#navigationBar").allOff("tap").remove();
+
+// before removing DOM elements, remove *all* listeners
+q("#navigationBar").allOff().remove();
+}
+);
+
+
+addSample(".hasListener", {
+  javascript: function() {
+var myListener = function(e) {};
+
+// sample code to demonstrate the pitfall with the context parameter
+q(document.body).on('pointerdown', myListener, q(window));
+
+// result will *always* be 'false'
+// -> the context to check for is a *new* collection instance and *not* identical to the one used with the 'on' method
+console.log(q(document.body).hasListener('pointerdown', myListener, q(window)));
+
+// this will work
+var context = q(window);
+q(document.body).on('pointerdown', myListener, context);
+
+// result will be 'true'
+console.log(q(document.body).hasListener('pointerdown', myListener, context));
+  },
+  executable: true
+});
+
+
+addSample(".emit", {
+  html: [ '<div id="target"></div>' ],
+  javascript: function() {/* BE AWARE OF OVERUSING THIS PATTERN. IT CAN RESULT IN BAD / UNMAINTAINABLE CODE */
+
+var target = q('#target');
+// normally the listener and emitteer code won't be placed together
+// just for demo cases packaged here together
+
+// listener code
+// there can be as many as callbacks registered as you like
+// can be used for a 1:n communication
+target.on('customEvent', function(data) {
+  // 'data' is the payload of the event
+  // in our case we can do the following:
+  data.sampleMethod();
+  var index = data.index;
+});
+
+// emitter code
+// you can define whatever you like to as payload / data
+target.emit('customEvent', {
+  index: 3,
+  sampleMethod: function() { alert('sampleMethod called!'); }
+});
+},
+executable: true
+});
+
 addSample(".hover", {
     html: ['<div id="hover">Hover element</div>'],
     javascript: function() {
@@ -239,4 +317,90 @@ q('ul#test').onMatchTarget('pointerdown', '.special', function(target, event) {
 });
 },
   executable: true
+});
+
+addSample("Event.getKeyIdentifier", {
+  html: [ '<input type="text" id="website"></input>',
+    '<div id="textContainer"></div>'
+  ],
+  css: ['#website {',
+    '  position: relative;',
+    '  left: 50px;',
+    '  top: 50px;',
+    '  border: 1px solid #ADD8E6;',
+    '  width: 50%;',
+    '}',
+    '',
+    '#textContainer {',
+    '  position: relative;',
+    '  margin: 0 50px;',
+    '  padding: 10px;',
+    '  top: 75px;',
+    '  background-color: #eee;',
+    '  display: block;',
+    '  height: 150px;',
+    '  overflow: auto;',
+    '  font-size: 12px;',
+    '  font-family: Verdana;',
+    '}'
+  ],
+  javascript: function() {
+// Catch the key the user hit and display it in the div element
+// IMPORTANT: use the 'keyup' or 'keydown' event when working with the 'getKeyIdentifier' method
+// The 'keypress' event is due browser incompatibilities not recommended
+// (e.g. some identifiers like 'Enter' or 'Backspace' are simply not working for Chrome)
+q('#website').on('keyup', function(e) {
+  var userInput = e.getKeyIdentifier();
+
+  var content = q('#textContainer').getAttribute('text');
+  // special case if the div element has no content
+  content = content === null ? '' : content;
+
+  q('#textContainer').setAttribute('text', content + ' ' + userInput);
+});
+},
+executable: true
+});
+
+addSample("Event.getKeyIdentifier", {
+  html: [ '<input type="text" id="website"></input>',
+    '<div id="textContainer"></div>'
+  ],
+  css: ['#website {',
+    '  position: relative;',
+    '  left: 50px;',
+    '  top: 50px;',
+    '  border: 1px solid #ADD8E6;',
+    '  width: 50%;',
+    '}',
+    '',
+    '#textContainer {',
+    '  position: relative;',
+    '  margin: 0 50px;',
+    '  padding: 10px;',
+    '  top: 75px;',
+    '  background-color: #eee;',
+    '  display: block;',
+    '  height: 150px;',
+    '  overflow: auto;',
+    '  font-size: 12px;',
+    '  font-family: Verdana;',
+    '}'
+  ],
+  javascript: function() {
+// Use the 'keyup' event to sync the the value of an input element with a div element.
+// Hint: do not use the 'keypress' event. The value of the input element is (yet) not updated at this time
+// and you would get an old value.
+q('#website').on('keyup', function(e) {
+  // target is the input element
+  var inputValue = q(e.getTarget()).getValue();
+
+  // Sync with the div element by using the value of the input element in favor
+  // of the value supplied by the event.
+  // The value of 'e.getKeyIdentifier()' would return the key the user hit, but then
+  // you have to handle Backspace, Delete and other special keys to sync the input and div element correctly.
+  q('#textContainer').setAttribute('text', inputValue);
+});
+},
+executable: true
 });

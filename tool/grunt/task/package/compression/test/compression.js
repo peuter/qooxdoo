@@ -34,6 +34,11 @@ module.exports = {
         module: {exports: exports},
         require: require,
         console: console,
+        qx: {
+          tool: {
+            Cache: require('../../../../lib/qx/tool/Cache')
+          }
+        }
       };
 
       this.compression = sandbox('lib/compression.js', boxGlobals);
@@ -287,6 +292,7 @@ module.exports = {
       var actualCodeWithPrivates = this.compression.compress(
         "qx.foo.Bar",
         fakeClass.toString(),
+        null,
         {}
       );
 
@@ -296,6 +302,7 @@ module.exports = {
       var actualCodeWithoutPrivates = this.compression.compress(
         "qx.foo.Bar",
         fakeClass.toString(),
+        null,
         {privates: false}
       );
 

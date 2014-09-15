@@ -89,7 +89,7 @@ testrunner.define({
   testDependencies : function()
   {
     if (q.$$qx.core.Environment.get("qx.debug")) {
-      this.skip("Only reasonable in non-debug version.")
+      this.skip("Only reasonable in non-debug version.");
     }
     this.assertUndefined(q.$$qx.Class, "Class");
     this.assertUndefined(q.$$qx.Interface, "Interface");
@@ -2275,7 +2275,7 @@ testrunner.define({
       target = ev.getCurrentTarget();
     };
 
-    test = q.create('<input type="text" />');
+    var test = q.create('<input type="text" />');
     test.appendTo(this.sandbox[0]);
     test.on("mousedown", callback, this);
 
@@ -2286,6 +2286,59 @@ testrunner.define({
 
     this.wait(function() {
       this.assertEquals(test[0], target);
+    }, 500, this);
+  },
+
+
+  testCurrentTargetMultiElementsDispatch : function() {
+    if (!qx.core.Environment.get("event.dispatchevent")) {
+      this.skip("Requires dispatchEvent");
+    }
+
+    var target;
+
+    var callback = function(ev) {
+      target = ev.getCurrentTarget();
+    };
+
+    var test = q.create('<div/><div/><div/>')
+      .appendTo(this.sandbox[0])
+      .on("mousedown", callback, this);
+
+    window.setTimeout(function() {
+      var event = new qx.event.type.dom.Custom("mousedown");
+      test[1].dispatchEvent(event);
+    }, 100);
+
+    this.wait(function() {
+      this.assertEquals(test[1], target);
+    }, 500, this);
+  },
+
+
+  testCurrentTargetMultiElementsEmit : function() {
+    if (!qx.core.Environment.get("event.dispatchevent")) {
+      this.skip("Requires dispatchEvent");
+    }
+
+    var target;
+
+    var callback = function(ev) {
+      target = ev.getCurrentTarget();
+    };
+
+    var test = q.create('<div id="0"/><div id="1"/><div id="2"/>')
+      .appendTo(this.sandbox[0])
+      .on("mousedown", callback, this);
+
+    window.setTimeout(function() {
+      window.affe = true;
+      test.eq(1).emit("mousedown", {});
+      window.affe = false;
+    }, 100);
+
+    this.wait(function() {
+      this.assertEquals(test[1].getAttribute("id"), target.getAttribute("id"));
     }, 500, this);
   }
 });
@@ -2466,21 +2519,24 @@ testrunner.define({
     var cb = function() {};
     var test = q.create('<div></div>').appendTo(this.sandbox[0])
     .on("pointerdown", cb)
-    .on("pointerup");
+    .on("pointerup", cb);
     this.assertEquals("qx.event.handler.PointerCore", test[0].$$pointerHandler.classname);
     test.off("pointerdown", cb);
-    this.assertNotNull(test[0].$$pointerHandler);
+    this.assertNotUndefined(test[0].$$pointerHandler);
     test.off("pointerup", cb);
-    this.assertNull(test[0].$$pointerHandler);
+    this.assertUndefined(test[0].$$pointerHandler);
+  },
+
+  __onMouseDown : function(e) {
+    this.resume(function() {
+      q(document).off("mousedown", this.__onMouseDown, this);
+      this.assertEquals("mousedown", e.getType());
+    }, this);
   },
 
   testNativeBubbling : function() {
     this.sandbox.on("pointerdown", function() {});
-    q(document).on("mousedown", function(e) {
-      this.resume(function() {
-        this.assertEquals("mousedown", e.getType());
-      }, this);
-    }, this);
+    q(document).on("mousedown", this.__onMouseDown, this);
 
     setTimeout(function() {
       var domEvent = testrunner.createMouseEvent("mousedown");
@@ -2489,6 +2545,29 @@ testrunner.define({
         this.sandbox[0].fireEvent("onmousedown", domEvent);
     }.bind(this), 100);
     this.wait(250);
+  },
+
+  testDisposeHandler: function() {
+    var cb = function() {};
+    this.sandbox
+      .on("pointerdown", cb)
+      .on("pointerup", cb)
+      .off("pointerdown", cb);
+    this.assertNotUndefined(this.sandbox[0].$$pointerHandler);
+    this.sandbox.off("pointerup", cb);
+    this.assertUndefined(this.sandbox[0].$$pointerHandler);
+  },
+
+  testRemoveMultiple: function() {
+    var cb = function() {};
+    this.sandbox
+      .on("pointerdown", cb)
+      .on("pointerup", cb)
+      .off("pointerup", cb)
+      .off("pointerup", cb);
+    this.assertNotUndefined(this.sandbox[0].$$pointerHandler);
+    this.sandbox.off("pointerdown", cb);
+    this.assertUndefined(this.sandbox[0].$$pointerHandler);
   }
 });
 
@@ -2504,12 +2583,35 @@ testrunner.define({
     var cb = function() {};
     var test = q.create('<div></div>').appendTo(this.sandbox[0])
     .on("tap", cb)
-    .on("swipe");
+    .on("swipe", cb);
     this.assertEquals("qx.event.handler.GestureCore", test[0].$$gestureHandler.classname);
     test.off("tap", cb);
     this.assertNotNull(test[0].$$gestureHandler);
     test.off("swipe", cb);
-    this.assertNull(test[0].$$gestureHandler);
+    this.assertUndefined(test[0].$$gestureHandler);
+  },
+
+  testDisposeHandler: function() {
+    var cb = function() {};
+    this.sandbox
+      .on("tap", cb)
+      .on("swipe", cb)
+      .off("tap", cb);
+    this.assertNotUndefined(this.sandbox[0].$$gestureHandler);
+    this.sandbox.off("swipe", cb);
+    this.assertUndefined(this.sandbox[0].$$gestureHandler);
+  },
+
+  testRemoveMultiple: function() {
+    var cb = function() {};
+    this.sandbox
+      .on("tap", cb)
+      .on("swipe", cb)
+      .off("swipe", cb)
+      .off("swipe", cb);
+    this.assertNotUndefined(this.sandbox[0].$$gestureHandler);
+    this.sandbox.off("tap", cb);
+    this.assertUndefined(this.sandbox[0].$$gestureHandler);
   }
 });
 
@@ -3576,14 +3678,14 @@ testrunner.define({
 
   testMediaQueryMatches: function () {
     var iframe = this.__iframe[0];
-    this.sandbox.mediaQueryToClass("only screen", "testMediaQueryMatches", iframe.contentWindow);
+    this.sandbox.mediaQueryToClass("only screen", "testMediaQueryMatches", iframe.window);
 
     this.assertTrue(this.sandbox.hasClass("testMediaQueryMatches"));
   },
 
   testMediaQueryNotMatches: function () {
     var iframe = this.__iframe[0];
-    this.sandbox.mediaQueryToClass("only print", "testMediaQueryNotMatches", iframe.contentWindow);
+    this.sandbox.mediaQueryToClass("only print", "testMediaQueryNotMatches", iframe.window);
 
     this.assertFalse(this.sandbox.hasClass("testMediaQueryNotMatches"));
   },
@@ -3595,10 +3697,9 @@ testrunner.define({
     sandbox.mediaQueryToClass(
       "only screen and (min-width: 40.063em)",
       "testMediaQueryMatchesAfterResizing",
-      iframe.contentWindow
+      iframe.window
     );
-    iframe.width = 200;
-    this.assertFalse(sandbox.hasClass("testMediaQueryMatchesAfterResizing"));
+
     iframe.width = 800;
 
     window.setTimeout(function(){

@@ -45,11 +45,29 @@ module.exports = {
     },
 
     getFeatureTable: function(test) {
+      var classCode = "qx.Bootstrap.define('qx.bom.client.Engine', {\n"+
+                      "  defer : function(statics) {\n"+
+                      "    qx.core.Environment.add('engine.version', statics.getVersion);\n"+
+                      "    qx.core.Environment.add('engine.name', statics.getName);\n"+
+                      "  }\n"+
+                      "});\n";
+
+      var expected = {
+        'engine.version': 'qx.bom.client.Engine',
+        'engine.name': 'qx.bom.client.Engine'
+      };
+
+      test.deepEqual(this.qxCoreEnv.getFeatureTable({'qx.bom.client.Engine': classCode}), expected);
+
+      test.done();
+    },
+
+    extractEnvDefaults: function(test) {
       var tree = {
         type: 'Property',
         key: {
           type: 'Identifier',
-          name: '_checksMap'
+          name: '_defaults'
         },
         value: {      // used as input for escodegen.generate()
           type: 'ObjectExpression',
@@ -58,13 +76,13 @@ module.exports = {
               type: 'Property',
               key: {
                 type: 'Literal',
-                value: 'engine.version',
-                raw: '\'engine.version\''
+                value: 'qx.debug',
+                raw: '\'qx.debug\''
               },
               value: {
                 type: 'Literal',
-                value: 'qx.bom.client.Engine.getVersion',
-                raw: '\'qx.bom.client.Engine.getVersion\''
+                value: true,
+                raw: '\'true\''
               },
               kind: 'init'
             },
@@ -72,13 +90,13 @@ module.exports = {
               type: 'Property',
               key: {
                 type: 'Literal',
-                value: 'engine.name',
-                raw: '\'engine.name\''
+                value: 'qx.blankpage',
+                raw: '\'qx.blankpage\''
               },
               value: {
                 type: 'Literal',
-                value: 'qx.bom.client.Engine.getName',
-                raw: '\'qx.bom.client.Engine.getName\''
+                value: 'qx/static/blank.html',
+                raw: '\'qx/static/blank.html\''
               },
               kind: 'init'
             }
@@ -93,11 +111,11 @@ module.exports = {
       esprima.parse = function() { return tree; };
 
       var expected = {
-        'engine.version': 'qx.bom.client.Engine.getVersion',
-        'engine.name': 'qx.bom.client.Engine.getName'
+        'qx.debug': true,
+        'qx.blankpage': 'qx/static/blank.html'
       };
 
-      test.deepEqual(this.qxCoreEnv.getFeatureTable(), expected);
+      test.deepEqual(this.qxCoreEnv.extractEnvDefaults(), expected);
 
       // don't forget to restore original!
       esprima.parse = orig_parse;
@@ -174,6 +192,250 @@ module.exports = {
       test.done();
     },
 
+
+    isQxCoreEnvironmentCall: function(test) {
+      var treeTmpl = {
+        type: 'CallExpression',
+        callee: {
+          type: 'MemberExpression',
+          object: {
+            type: 'MemberExpression',
+            object: {
+              type: 'MemberExpression',
+              object: {
+                type: 'Identifier',
+                name: 'qx',
+              },
+              property: {
+                type: 'Identifier',
+                name: 'core'
+              }
+            },
+            property: {
+              type: 'Identifier',
+              name: 'Environment'
+            }
+          },
+          property: {
+            type: 'Identifier',
+            name: 'toBeFilledByTests'
+          }
+        }
+      };
+
+      treeTmpl.callee.property.name = 'select';
+      var treeGoodSelect = treeTmpl;
+      test.ok(this.qxCoreEnv.isQxCoreEnvironmentCall(treeGoodSelect));
+
+      treeTmpl.callee.property.name = 'selectAsync';
+      var treeGoodSelectAsync = treeTmpl;
+      test.ok(this.qxCoreEnv.isQxCoreEnvironmentCall(treeGoodSelectAsync));
+
+      treeTmpl.callee.property.name = 'filter';
+      var treeGoodFilter = treeTmpl;
+      test.ok(this.qxCoreEnv.isQxCoreEnvironmentCall(treeGoodFilter), ['filter', 'get']);
+
+      treeTmpl.callee.property.name = 'wrongMethod';
+      var treeBadMethName = treeTmpl;
+      test.ok(!this.qxCoreEnv.isQxCoreEnvironmentCall(treeBadMethName));
+
+      treeTmpl.callee.property.name = 'select';  // fix method
+      treeTmpl.callee.object.object.property.name = 'notCore';
+      var treeBadQxEnvCall = treeTmpl;
+      test.ok(!this.qxCoreEnv.isQxCoreEnvironmentCall(treeBadQxEnvCall));
+
+      test.done();
+    },
+
+    replaceEnvCallGet: function(test) {
+
+      var inputTree = {
+        "type": "ExpressionStatement",
+        "expression": {
+          "type": "CallExpression",
+          "callee": {
+            "type": "MemberExpression",
+            "computed": false,
+            "object": {
+              "type": "MemberExpression",
+              "computed": false,
+              "object": {
+                "type": "MemberExpression",
+                "computed": false,
+                "object": {
+                  "type": "Identifier",
+                  "name": "qx"
+                },
+                "property": {
+                  "type": "Identifier",
+                  "name": "core"
+                }
+              },
+              "property": {
+                "type": "Identifier",
+                "name": "Environment"
+              }
+            },
+            "property": {
+              "type": "Identifier",
+              "name": "get"
+            }
+          },
+              "arguments": [
+                {
+                  "type": "Literal",
+                  "value": "qx.debug",
+                  "raw": "\"qx.debug\""
+                }
+              ]
+          }
+      };
+
+      var outputTree = {
+        "type": "ExpressionStatement",
+        "expression": {
+          "type": "Literal",
+          "value": true,
+          "raw": "true"
+        }
+      };
+
+      test.deepEqual(
+        this.qxCoreEnv.replaceEnvCallGet(inputTree, {"qx.debug": true}),
+        outputTree
+      );
+
+      test.done();
+    },
+
+    replaceEnvCallSelect: function(test) {
+      var inputTree = {
+        "type": "ExpressionStatement",
+        "expression": {
+          "type": "CallExpression",
+          "callee": {
+            "type": "MemberExpression",
+            "computed": false,
+            "object": {
+              "type": "MemberExpression",
+              "computed": false,
+              "object": {
+                "type": "MemberExpression",
+                "computed": false,
+                "object": {
+                  "type": "Identifier",
+                  "name": "qx"
+                },
+                "property": {
+                  "type": "Identifier",
+                  "name": "core"
+                }
+              },
+              "property": {
+                "type": "Identifier",
+                "name": "Environment"
+              }
+            },
+            "property": {
+              "type": "Identifier",
+              "name": "select"
+            }
+          },
+          "arguments": [{
+            "type": "Literal",
+            "value": "qx.debug",
+            "raw": "\"qx.debug\""
+          }, {
+            "type": "ObjectExpression",
+            "properties": [{
+              "type": "Property",
+              "key": {
+                "type": "Literal",
+                "value": "true",
+                "raw": "\"true\""
+              },
+              "value": {
+                "type": "ObjectExpression",
+                "properties": [{
+                  "type": "Property",
+                  "key": {
+                    "type": "Literal",
+                    "value": "a",
+                    "raw": "\"a\""
+                  },
+                  "value": {
+                    "type": "Literal",
+                    "value": 1,
+                    "raw": "1"
+                  },
+                  "kind": "init"
+                }]
+              },
+              "kind": "init"
+            }, {
+              "type": "Property",
+              "key": {
+                "type": "Literal",
+                "value": "default",
+                "raw": "\"default\""
+              },
+              "value": {
+                "type": "Literal",
+                "value": null,
+                "raw": "null"
+              },
+              "kind": "init"
+            }]
+          }]
+        }
+      };
+
+      var outputTreeTrue = {
+        "type": "ExpressionStatement",
+        "expression": {
+          "type": "ObjectExpression",
+          "properties": [{
+            "type": "Property",
+            "key": {
+              "type": "Literal",
+              "value": "a",
+              "raw": "\"a\""
+            },
+            "value": {
+              "type": "Literal",
+              "value": 1,
+              "raw": "1"
+            },
+            "kind": "init"
+          }]
+        }
+      };
+
+      var outputTreeFalse = {
+        "type": "ExpressionStatement",
+        "expression": {
+          "type": "Literal",
+          "value": null,
+          "raw": "null"
+        }
+      };
+
+      // clone tree because it will be manipulated after the first test run
+      var clonedInputTree = JSON.parse(JSON.stringify(inputTree));
+
+      test.deepEqual(
+        this.qxCoreEnv.replaceEnvCallSelect(inputTree, {"qx.debug": true}),
+        outputTreeTrue
+      );
+
+      test.deepEqual(
+        this.qxCoreEnv.replaceEnvCallSelect(clonedInputTree, {"qx.debug": false}),
+        outputTreeFalse
+      );
+
+      test.done();
+    },
+
     addLoadRunInformation: function(test) {
       var nodes = [
         {loc:{start:{line: 105}}},  // within first scope
@@ -235,7 +497,7 @@ module.exports = {
       test.done();
     },
 
-    getEnvMethod: function(test) {
+    getMethodFromEnvCall: function(test) {
       var fakeNode = {
         callee: {
           property: {
@@ -244,13 +506,13 @@ module.exports = {
         }
       };
 
-      var actual = this.qxCoreEnv.getEnvMethod(fakeNode);
+      var actual = this.qxCoreEnv.getMethodFromEnvCall(fakeNode);
       test.strictEqual(actual, "foo");
 
       test.done();
     },
 
-    getEnvKey: function(test) {
+    getKeyFromEnvCall: function(test) {
       var fakeNode = {
         arguments: {
           0: {
@@ -259,8 +521,110 @@ module.exports = {
         }
       };
 
-      var actual = this.qxCoreEnv.getEnvKey(fakeNode);
+      var actual = this.qxCoreEnv.getKeyFromEnvCall(fakeNode);
       test.strictEqual(actual, 123);
+
+      test.done();
+    },
+
+    getEnvSelectValueByKey: function(test) {
+      var inputTree = {
+        "type": "CallExpression",
+        // [...]
+        "arguments": [{
+          "type": "Literal",
+          "value": "qx.debug",
+          "raw": "\"qx.debug\""
+        }, {
+          "type": "ObjectExpression",
+          "properties": [{
+            "type": "Property",
+            "key": {
+              "type": "Literal",
+              "value": "true",
+              "raw": "\"true\""
+            },
+            "value": {
+              "type": "ObjectExpression",
+              "properties": [{
+                "type": "Property",
+                "key": {
+                  "type": "Literal",
+                  "value": "a",
+                  "raw": "\"a\""
+                },
+                "value": {
+                  "type": "Literal",
+                  "value": 1,
+                  "raw": "1"
+                },
+                "kind": "init"
+              }]
+            },
+            "kind": "init"
+          }, {
+            "type": "Property",
+            "key": {
+              "type": "Literal",
+              "value": "default",
+              "raw": "\"default\""
+            },
+            "value": {
+              "type": "Literal",
+              "value": null,
+              "raw": "null"
+            },
+            "kind": "init"
+          }]
+        }]
+      };
+
+      var outputTreeTrue = {
+        type: 'ObjectExpression',
+        properties: [{
+          type: 'Property',
+          key: {
+            type: 'Literal',
+            value: 'a',
+            raw: '"a"'
+          },
+          value: {
+            type: 'Literal',
+            value: 1,
+            raw: '1'
+          },
+          kind: 'init'
+        }]
+      };
+
+      var outputTreeFalse = {
+        "type": "Literal",
+        "value": null,
+        "raw": "null"
+      };
+
+      // clone tree because it will be manipulated after the first test run
+      var clonedInputTree = JSON.parse(JSON.stringify(inputTree));
+      var inputTreeWithoutDefault = JSON.parse(JSON.stringify(inputTree));
+      inputTreeWithoutDefault.arguments[1].properties[1].key.value = "notDefault";
+
+
+      test.deepEqual(
+        this.qxCoreEnv.getEnvSelectValueByKey(inputTree, true),
+        outputTreeTrue
+      );
+
+      test.deepEqual(
+        this.qxCoreEnv.getEnvSelectValueByKey(clonedInputTree, false),
+        outputTreeFalse
+      );
+
+      test.throws(
+        function() {
+          this.qxCoreEnv.getEnvSelectValueByKey(inputTreeWithoutDefault, "nonMatchingKey");
+        },
+        Error
+      );
 
       test.done();
     },
@@ -273,6 +637,17 @@ module.exports = {
       test.ok(actual.split('\n').length > 1300);
 
       test.done();
+    },
+
+    getEnvKeyProviderCode: function(test) {
+      var classToCodeMap = this.qxCoreEnv.getEnvKeyProviderCode();
+
+      // js code is stored as buffer and has more than 200 lines
+      var qxBomClientEngineCode = classToCodeMap['qx.bom.client.Engine'].toString('utf-8');
+      test.strictEqual((typeof qxBomClientEngineCode), "string");
+      test.ok(qxBomClientEngineCode.split('\n').length > 200);
+
+      test.done();
     }
   },
 
@@ -281,6 +656,282 @@ module.exports = {
     setUp: function (done) {
       this.qxCoreEnv = require('../lib/qxCoreEnv.js');
       done();
+    },
+
+    optimizeEnvCall: function(test) {
+      /*
+        if (qx.core.Environment.get("qx.debug") === true) {
+          var obj1 = { "a": 1 };
+        }
+
+        var obj2 = qx.core.Environment.select("qx.debug", {
+          "true": { "b": 2 },
+          "default": null
+        })
+      */
+      var inputTree = {
+        "type": "Program",
+        "body": [{
+          "type": "IfStatement",
+          "test": {
+            "type": "BinaryExpression",
+            "operator": "===",
+            "left": {
+              "type": "CallExpression",
+              "callee": {
+                "type": "MemberExpression",
+                "computed": false,
+                "object": {
+                  "type": "MemberExpression",
+                  "computed": false,
+                  "object": {
+                    "type": "MemberExpression",
+                    "computed": false,
+                    "object": {
+                      "type": "Identifier",
+                      "name": "qx"
+                    },
+                    "property": {
+                      "type": "Identifier",
+                      "name": "core"
+                    }
+                  },
+                  "property": {
+                    "type": "Identifier",
+                    "name": "Environment"
+                  }
+                },
+                "property": {
+                  "type": "Identifier",
+                  "name": "get"
+                }
+              },
+              "arguments": [{
+                "type": "Literal",
+                "value": "qx.debug",
+                "raw": "\"qx.debug\""
+              }]
+            },
+            "right": {
+              "type": "Literal",
+              "value": true,
+              "raw": "true"
+            }
+          },
+          "consequent": {
+            "type": "BlockStatement",
+            "body": [{
+              "type": "VariableDeclaration",
+              "declarations": [{
+                "type": "VariableDeclarator",
+                "id": {
+                  "type": "Identifier",
+                  "name": "obj1"
+                },
+                "init": {
+                  "type": "ObjectExpression",
+                  "properties": [{
+                    "type": "Property",
+                    "key": {
+                      "type": "Literal",
+                      "value": "a",
+                      "raw": "\"a\""
+                    },
+                    "value": {
+                      "type": "Literal",
+                      "value": 1,
+                      "raw": "1"
+                    },
+                    "kind": "init"
+                  }]
+                }
+              }],
+              "kind": "var"
+            }]
+          },
+          "alternate": null
+        }, {
+          "type": "VariableDeclaration",
+          "declarations": [{
+            "type": "VariableDeclarator",
+            "id": {
+              "type": "Identifier",
+              "name": "obj2"
+            },
+            "init": {
+              "type": "CallExpression",
+              "callee": {
+                "type": "MemberExpression",
+                "computed": false,
+                "object": {
+                  "type": "MemberExpression",
+                  "computed": false,
+                  "object": {
+                    "type": "MemberExpression",
+                    "computed": false,
+                    "object": {
+                      "type": "Identifier",
+                      "name": "qx"
+                    },
+                    "property": {
+                      "type": "Identifier",
+                      "name": "core"
+                    }
+                  },
+                  "property": {
+                    "type": "Identifier",
+                    "name": "Environment"
+                  }
+                },
+                "property": {
+                  "type": "Identifier",
+                  "name": "select"
+                }
+              },
+              "arguments": [{
+                "type": "Literal",
+                "value": "qx.debug",
+                "raw": "\"qx.debug\""
+              }, {
+                "type": "ObjectExpression",
+                "properties": [{
+                  "type": "Property",
+                  "key": {
+                    "type": "Literal",
+                    "value": "true",
+                    "raw": "\"true\""
+                  },
+                  "value": {
+                    "type": "ObjectExpression",
+                    "properties": [{
+                      "type": "Property",
+                      "key": {
+                        "type": "Literal",
+                        "value": "b",
+                        "raw": "\"b\""
+                      },
+                      "value": {
+                        "type": "Literal",
+                        "value": 2,
+                        "raw": "2"
+                      },
+                      "kind": "init"
+                    }]
+                  },
+                  "kind": "init"
+                }, {
+                  "type": "Property",
+                  "key": {
+                    "type": "Literal",
+                    "value": "default",
+                    "raw": "\"default\""
+                  },
+                  "value": {
+                    "type": "Literal",
+                    "value": null,
+                    "raw": "null"
+                  },
+                  "kind": "init"
+                }]
+              }]
+            }
+          }],
+          "kind": "var"
+        }]
+      };
+
+      /*
+        if (true === true) {
+          var obj1 = {'a': 1};
+        }
+        var obj2 = {'b': 2};
+      */
+      var expectedTree = {
+        "type": "Program",
+        "body": [{
+          "type": "IfStatement",
+          "test": {
+            "type": "BinaryExpression",
+            "operator": "===",
+            "left": {
+              "type": "Literal",
+              "value": true,
+              "raw": "true"
+            },
+            "right": {
+              "type": "Literal",
+              "value": true,
+              "raw": "true"
+            }
+          },
+          "consequent": {
+            "type": "BlockStatement",
+            "body": [{
+              "type": "VariableDeclaration",
+              "declarations": [{
+                "type": "VariableDeclarator",
+                "id": {
+                  "type": "Identifier",
+                  "name": "obj1"
+                },
+                "init": {
+                  "type": "ObjectExpression",
+                  "properties": [{
+                    "type": "Property",
+                    "key": {
+                      "type": "Literal",
+                      "value": "a",
+                      "raw": "\"a\""
+                    },
+                    "value": {
+                      "type": "Literal",
+                      "value": 1,
+                      "raw": "1"
+                    },
+                    "kind": "init"
+                  }]
+                }
+              }],
+              "kind": "var"
+            }]
+          },
+          "alternate": null
+        }, {
+          "type": "VariableDeclaration",
+          "declarations": [{
+            "type": "VariableDeclarator",
+            "id": {
+              "type": "Identifier",
+              "name": "obj2"
+            },
+            "init": {
+              "type": "ObjectExpression",
+              "properties": [{
+                "type": "Property",
+                "key": {
+                  "type": "Literal",
+                  "value": "b",
+                  "raw": "\"b\""
+                },
+                "value": {
+                  "type": "Literal",
+                  "value": 2,
+                  "raw": "2"
+                },
+                "kind": "init"
+              }]
+            }
+          }],
+          "kind": "var"
+        }]
+      };
+
+      test.deepEqual(
+        this.qxCoreEnv.optimizeEnvCall(inputTree, {"qx.debug": true}),
+        expectedTree
+      );
+
+      test.done();
     },
 
     extract: function(test) {

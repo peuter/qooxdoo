@@ -53,7 +53,7 @@
 
   "config-warnings" :
   {
-    "job-shadowing" : [ "common", "testrunner-portable::build-script", "distclean", "clean" ],
+    "job-shadowing" : [ "common", "testrunner-portable::build-script", "distclean", "clean", "build" ],
 
     "environment" : [ "non-literal-keys" ]
   },
@@ -84,6 +84,12 @@
       }
     },
 
+    "build" : {
+      "let" : {
+        "QXDEBUG" : true
+      }
+    },
+
     "source" :
     {
       "extend" : ["website-common", "source-script"],
@@ -92,7 +98,8 @@
       {
         "OPTIMIZE" : [],
         "Q_INCLUDES" : "${QXWEB_ALL}",
-        "BUILD_PATH" : "${SCRIPT_PATH}"
+        "BUILD_PATH" : "${SCRIPT_PATH}",
+        "QXDEBUG" : true
       },
 
       "compile-options" :

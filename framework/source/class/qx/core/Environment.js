@@ -141,10 +141,6 @@
  *       <td>{@link qx.bom.client.Css#getAppearance}</td>
  *     </tr>
  *     <tr>
- *       <td>css.float</td><td><i>String</i> or <i>null</i></td><td><code>cssFloat</code></td>
- *       <td>{@link qx.bom.client.Css#getFloat}</td>
- *     </tr>
- *     <tr>
  *       <td>css.userselect</td><td><i>String</i> or <i>null</i></td><td><code>WebkitUserSelect</code></td>
  *       <td>{@link qx.bom.client.Css#getUserSelect}</td>
  *     </tr>
@@ -810,151 +806,45 @@ qx.Bootstrap.define("qx.core.Environment",
     /** Internal cache for all checks. */
     __cache : {},
 
-    /** Internal map for environment keys to check methods. */
-    _checksMap:
-    {
-      "engine.version" : "qx.bom.client.Engine.getVersion",
-      "engine.name" : "qx.bom.client.Engine.getName",
-      "browser.name" : "qx.bom.client.Browser.getName",
-      "browser.version" : "qx.bom.client.Browser.getVersion",
-      "browser.documentmode" : "qx.bom.client.Browser.getDocumentMode",
-      "browser.quirksmode" : "qx.bom.client.Browser.getQuirksMode",
-      "runtime.name" : "qx.bom.client.Runtime.getName",
-      "device.name" : "qx.bom.client.Device.getName",
-      "device.type" : "qx.bom.client.Device.getType",
-      "device.pixelRatio" : "qx.bom.client.Device.getPixelRatio",
-      "device.touch" : "qx.bom.client.Device.getTouch",
-      "locale" : "qx.bom.client.Locale.getLocale",
-      "locale.variant" : "qx.bom.client.Locale.getVariant",
-      "os.name" : "qx.bom.client.OperatingSystem.getName",
-      "os.version" : "qx.bom.client.OperatingSystem.getVersion",
-      "os.scrollBarOverlayed" : "qx.bom.client.Scroll.scrollBarOverlayed",
-      "plugin.gears" : "qx.bom.client.Plugin.getGears",
-      "plugin.activex" : "qx.bom.client.Plugin.getActiveX",
-      "plugin.skype" : "qx.bom.client.Plugin.getSkype",
-      "plugin.quicktime" : "qx.bom.client.Plugin.getQuicktime",
-      "plugin.quicktime.version" : "qx.bom.client.Plugin.getQuicktimeVersion",
-      "plugin.windowsmedia" : "qx.bom.client.Plugin.getWindowsMedia",
-      "plugin.windowsmedia.version" : "qx.bom.client.Plugin.getWindowsMediaVersion",
-      "plugin.divx" : "qx.bom.client.Plugin.getDivX",
-      "plugin.divx.version" : "qx.bom.client.Plugin.getDivXVersion",
-      "plugin.silverlight" : "qx.bom.client.Plugin.getSilverlight",
-      "plugin.silverlight.version" : "qx.bom.client.Plugin.getSilverlightVersion",
-      "plugin.flash" : "qx.bom.client.Flash.isAvailable",
-      "plugin.flash.version" : "qx.bom.client.Flash.getVersion",
-      "plugin.flash.express" : "qx.bom.client.Flash.getExpressInstall",
-      "plugin.flash.strictsecurity" : "qx.bom.client.Flash.getStrictSecurityModel",
-      "plugin.pdf" : "qx.bom.client.Plugin.getPdf",
-      "plugin.pdf.version" : "qx.bom.client.Plugin.getPdfVersion",
-      "plugin.pdfjs" : "qx.bom.client.Pdfjs.getPdfjs",
-      "io.maxrequests" : "qx.bom.client.Transport.getMaxConcurrentRequestCount",
-      "io.ssl" : "qx.bom.client.Transport.getSsl",
-      "io.xhr" : "qx.bom.client.Transport.getXmlHttpRequest",
-      "event.touch" : "qx.bom.client.Event.getTouch",
-      "event.mspointer" : "qx.bom.client.Event.getMsPointer",
-      "event.help" : "qx.bom.client.Event.getHelp",
-      "event.hashchange" : "qx.bom.client.Event.getHashChange",
-      "event.dispatchevent" : "qx.bom.client.Event.getDispatchEvent",
-      "event.customevent" : "qx.bom.client.Event.getCustomEvent",
-      "event.mouseevent" : "qx.bom.client.Event.getMouseEvent",
-      "event.mousewheel" : "qx.bom.client.Event.getMouseWheel",
-      "ecmascript.error.stacktrace"       : "qx.bom.client.EcmaScript.getStackTrace",
-      "ecmascript.array.indexof" : "qx.bom.client.EcmaScript.getArrayIndexOf",
-      "ecmascript.array.lastindexof" : "qx.bom.client.EcmaScript.getArrayLastIndexOf",
-      "ecmascript.array.foreach" : "qx.bom.client.EcmaScript.getArrayForEach",
-      "ecmascript.array.filter" : "qx.bom.client.EcmaScript.getArrayFilter",
-      "ecmascript.array.map" : "qx.bom.client.EcmaScript.getArrayMap",
-      "ecmascript.array.some" : "qx.bom.client.EcmaScript.getArraySome",
-      "ecmascript.array.every" : "qx.bom.client.EcmaScript.getArrayEvery",
-      "ecmascript.array.reduce" : "qx.bom.client.EcmaScript.getArrayReduce",
-      "ecmascript.array.reduceright" : "qx.bom.client.EcmaScript.getArrayReduceRight",
-      "ecmascript.function.bind" : "qx.bom.client.EcmaScript.getFunctionBind",
-      "ecmascript.object.keys" : "qx.bom.client.EcmaScript.getObjectKeys",
-      "ecmascript.date.now" : "qx.bom.client.EcmaScript.getDateNow",
-      "ecmascript.error.toString" : "qx.bom.client.EcmaScript.getErrorToString",
-      "ecmascript.string.trim" : "qx.bom.client.EcmaScript.getStringTrim",
-      "html.webworker" : "qx.bom.client.Html.getWebWorker",
-      "html.filereader" : "qx.bom.client.Html.getFileReader",
-      "html.geolocation" : "qx.bom.client.Html.getGeoLocation",
-      "html.audio" : "qx.bom.client.Html.getAudio",
-      "html.audio.ogg" : "qx.bom.client.Html.getAudioOgg",
-      "html.audio.mp3" : "qx.bom.client.Html.getAudioMp3",
-      "html.audio.wav" : "qx.bom.client.Html.getAudioWav",
-      "html.audio.au" : "qx.bom.client.Html.getAudioAu",
-      "html.audio.aif" : "qx.bom.client.Html.getAudioAif",
-      "html.video" : "qx.bom.client.Html.getVideo",
-      "html.video.ogg" : "qx.bom.client.Html.getVideoOgg",
-      "html.video.h264" : "qx.bom.client.Html.getVideoH264",
-      "html.video.webm" : "qx.bom.client.Html.getVideoWebm",
-      "html.storage.local" : "qx.bom.client.Html.getLocalStorage",
-      "html.storage.session" : "qx.bom.client.Html.getSessionStorage",
-      "html.storage.userdata" : "qx.bom.client.Html.getUserDataStorage",
-      "html.classlist" : "qx.bom.client.Html.getClassList",
-      "html.xpath" : "qx.bom.client.Html.getXPath",
-      "html.xul" : "qx.bom.client.Html.getXul",
-      "html.canvas" : "qx.bom.client.Html.getCanvas",
-      "html.svg" : "qx.bom.client.Html.getSvg",
-      "html.vml" : "qx.bom.client.Html.getVml",
-      "html.dataset" : "qx.bom.client.Html.getDataset",
-      "html.dataurl" : "qx.bom.client.Html.getDataUrl",
-      "html.console" : "qx.bom.client.Html.getConsole",
-      "html.stylesheet.createstylesheet" : "qx.bom.client.Stylesheet.getCreateStyleSheet",
-      "html.stylesheet.insertrule" : "qx.bom.client.Stylesheet.getInsertRule",
-      "html.stylesheet.deleterule" : "qx.bom.client.Stylesheet.getDeleteRule",
-      "html.stylesheet.addimport" : "qx.bom.client.Stylesheet.getAddImport",
-      "html.stylesheet.removeimport" : "qx.bom.client.Stylesheet.getRemoveImport",
-      "html.element.contains" : "qx.bom.client.Html.getContains",
-      "html.element.compareDocumentPosition" : "qx.bom.client.Html.getCompareDocumentPosition",
-      "html.element.textcontent" : "qx.bom.client.Html.getTextContent",
-      "html.image.naturaldimensions" : "qx.bom.client.Html.getNaturalDimensions",
-      "html.history.state" : "qx.bom.client.Html.getHistoryState",
-      "html.selection" : "qx.bom.client.Html.getSelection",
-      "html.node.isequalnode" : "qx.bom.client.Html.getIsEqualNode",
-      "json" : "qx.bom.client.Json.getJson",
-      "css.textoverflow" : "qx.bom.client.Css.getTextOverflow",
-      "css.placeholder" : "qx.bom.client.Css.getPlaceholder",
-      "css.borderradius" : "qx.bom.client.Css.getBorderRadius",
-      "css.borderimage" : "qx.bom.client.Css.getBorderImage",
-      "css.borderimage.standardsyntax" : "qx.bom.client.Css.getBorderImageSyntax",
-      "css.boxshadow" : "qx.bom.client.Css.getBoxShadow",
-      "css.gradient.linear" : "qx.bom.client.Css.getLinearGradient",
-      "css.gradient.filter" : "qx.bom.client.Css.getFilterGradient",
-      "css.gradient.radial" : "qx.bom.client.Css.getRadialGradient",
-      "css.gradient.legacywebkit" : "qx.bom.client.Css.getLegacyWebkitGradient",
-      "css.boxmodel" : "qx.bom.client.Css.getBoxModel",
-      "css.rgba" : "qx.bom.client.Css.getRgba",
-      "css.userselect" : "qx.bom.client.Css.getUserSelect",
-      "css.userselect.none" : "qx.bom.client.Css.getUserSelectNone",
-      "css.usermodify" : "qx.bom.client.Css.getUserModify",
-      "css.appearance" : "qx.bom.client.Css.getAppearance",
-      "css.float" : "qx.bom.client.Css.getFloat",
-      "css.boxsizing" : "qx.bom.client.Css.getBoxSizing",
-      "css.animation" : "qx.bom.client.CssAnimation.getSupport",
-      "css.animation.requestframe" : "qx.bom.client.CssAnimation.getRequestAnimationFrame",
-      "css.transform" : "qx.bom.client.CssTransform.getSupport",
-      "css.transform.3d" : "qx.bom.client.CssTransform.get3D",
-      "css.transition" : "qx.bom.client.CssTransition.getSupport",
-      "css.inlineblock" : "qx.bom.client.Css.getInlineBlock",
-      "css.opacity" : "qx.bom.client.Css.getOpacity",
-      "css.textShadow" : "qx.bom.client.Css.getTextShadow",
-      "css.textShadow.filter" : "qx.bom.client.Css.getFilterTextShadow",
-      "css.alphaimageloaderneeded" : "qx.bom.client.Css.getAlphaImageLoaderNeeded",
-      "css.pointerevents" : "qx.bom.client.Css.getPointerEvents",
-      "phonegap" : "qx.bom.client.PhoneGap.getPhoneGap",
-      "phonegap.notification" : "qx.bom.client.PhoneGap.getNotification",
-      "xml.implementation" : "qx.bom.client.Xml.getImplementation",
-      "xml.domparser" : "qx.bom.client.Xml.getDomParser",
-      "xml.selectsinglenode" : "qx.bom.client.Xml.getSelectSingleNode",
-      "xml.selectnodes" : "qx.bom.client.Xml.getSelectNodes",
-      "xml.getelementsbytagnamens" : "qx.bom.client.Xml.getElementsByTagNameNS",
-      "xml.domproperties" : "qx.bom.client.Xml.getDomProperties",
-      "xml.attributens" : "qx.bom.client.Xml.getAttributeNS",
-      "xml.createnode" : "qx.bom.client.Xml.getCreateNode",
-      "xml.getqualifieditem" : "qx.bom.client.Xml.getQualifiedItem",
-      "xml.createelementns" : "qx.bom.client.Xml.getCreateElementNS",
-      "qx.mobile.nativescroll" : "qx.bom.client.Scroll.getNativeScroll"
-    },
+    /**
+     * Internal map for environment keys to check methods.
+     * Gets populated dynamically at runtime.
+     */
+    _checksMap: {},
 
+    _defaults: {
+      // an always-true key (e.g. for use in qx.core.Environment.filter() calls)
+      "true": true,
+      // old settings retTrue
+      "qx.allowUrlSettings": false,
+      "qx.allowUrlVariants": false,
+      "qx.debug.property.level": 0,
+      // old variants
+      // make sure to reflect all changes to qx.debug here in the bootstrap class!
+      "qx.mobile.emulatetouch": false, // @deprecated {4.0}
+      "qx.emulatemouse": false, // @deprecated {4.0}
+      "qx.debug": true,
+      "qx.debug.ui.queue": true,
+      "qx.aspects": false,
+      "qx.dynlocale": true,
+      "qx.dyntheme": true,
+      "qx.blankpage": "qx/static/blank.html",
+      "qx.debug.databinding": false,
+      "qx.debug.dispose": false,
+      // generator optimization vectors
+      "qx.optimization.basecalls": false,
+      "qx.optimization.comments": false,
+      "qx.optimization.privates": false,
+      "qx.optimization.strings": false,
+      "qx.optimization.variables": false,
+      "qx.optimization.variants": false,
+      // qooxdoo modules
+      "module.databinding": true,
+      "module.logger": true,
+      "module.property": true,
+      "module.events": true,
+      "qx.nativeScrollBars": false
+    },
 
     /**
      * The default accessor for the checks. It returns the value the current
@@ -1224,6 +1114,9 @@ qx.Bootstrap.define("qx.core.Environment",
       if (this._checks[key] == undefined) {
         // add functions directly
         if (check instanceof Function) {
+          if (!this._checksMap[key] && check.displayName) {
+            this._checksMap[key] = check.displayName.substr(0, check.displayName.length - 2);
+          }
           this._checks[key] = check;
         // otherwise, create a check function and use that
         } else {
@@ -1277,43 +1170,13 @@ qx.Bootstrap.define("qx.core.Environment",
      * Initializer for the default values of the framework settings.
      */
     _initDefaultQxValues : function() {
-      // an always-true key (e.g. for use in qx.core.Environment.filter() calls)
-      this.add("true", function() {return true;});
+      var createFuncReturning = function(val) {
+        return function() { return val; };
+      };
 
-      // old settings
-      this.add("qx.allowUrlSettings", function() {return false;});
-      this.add("qx.allowUrlVariants", function() {return false;});
-      this.add("qx.debug.property.level", function() {return 0;});
-
-      // old variants
-      // make sure to reflect all changes to qx.debug here in the bootstrap class!
-      this.add("qx.debug", function() {return true;});
-      this.add("qx.debug.ui.queue", function() {return true;});
-      this.add("qx.aspects", function() {return false;});
-      this.add("qx.dynlocale", function() {return true;});
-      this.add("qx.dyntheme", function() {return true;});
-      this.add("qx.mobile.emulatetouch", function() {return false;}); // @deprecated {4.0}
-      this.add("qx.emulatemouse", function() {return false;}); // @deprecated {4.0}
-      this.add("qx.blankpage", function() { return "qx/static/blank.html";});
-
-      this.add("qx.debug.databinding", function() {return false;});
-      this.add("qx.debug.dispose", function() {return false;});
-
-      // generator optimization vectors
-      this.add("qx.optimization.basecalls", function() {return false;});
-      this.add("qx.optimization.comments", function() {return false;});
-      this.add("qx.optimization.privates", function() {return false;});
-      this.add("qx.optimization.strings", function() {return false;});
-      this.add("qx.optimization.variables", function() {return false;});
-      this.add("qx.optimization.variants", function() {return false;});
-
-      // qooxdoo modules
-      this.add("module.databinding", function() {return true;});
-      this.add("module.logger", function() {return true;});
-      this.add("module.property", function() {return true;});
-      this.add("module.events", function() {return true;});
-
-      this.add("qx.nativeScrollBars", function() {return false;});
+      for (var prop in this._defaults) {
+        this.add(prop, createFuncReturning(this._defaults[prop]));
+      }
     },
 
 

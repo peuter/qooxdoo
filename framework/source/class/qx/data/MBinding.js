@@ -24,8 +24,15 @@
  */
 qx.Mixin.define("qx.data.MBinding",
 {
+  construct : function() {
+    // store the hash code for disposing object won't have a hash code after dispose.
+    this.__objectHash = this.toHashCode();
+  },
+
+
   members :
   {
+    __objectHash : null,
 
     /**
      * The bind method delegates the call to the
@@ -70,6 +77,19 @@ qx.Mixin.define("qx.data.MBinding",
 
 
     /**
+     * Removes all bindings between the object and the related one.
+     *
+     * @param relatedObject {qx.core.Object} The object of which related
+     *   bindings should be removed.
+     * @throws {Error} If one of the bindings listed internally can not be
+     *   removed.
+     */
+    removeRelatedBindings : function(relatedObject) {
+      qx.data.SingleValueBinding.removeRelatedBindings(this, relatedObject);
+    },
+
+
+    /**
      * Removes all bindings from the object.
      *
      * @throws {qx.core.AssertionError} If the object is not in the internal
@@ -92,5 +112,13 @@ qx.Mixin.define("qx.data.MBinding",
     getBindings: function() {
       return qx.data.SingleValueBinding.getAllBindingsForObject(this);
     }
+  },
+
+
+  destruct : function() {
+    // restore the object hash for disposing the bindings
+    this.$$hash = this.__objectHash;
+    this.removeAllBindings();
+    delete this.$$hash;
   }
 });

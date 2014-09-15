@@ -148,7 +148,7 @@ The ``$qooxdoo`` root directory should be made available through a local web ser
 Pre-publish demos
 ------------------
 
-Do a ``publish`` of the demos before testing starts. This assures that all links are working which are exercised during release testing. This includes links to the manual, Demobrowser and Playground, but also library links like ``q.min.js`` that are used in JsFiddle examples.
+Do a ``publish`` of the demos before testing starts. This assures that all links are working which are exercised during release testing. This includes links to the manual, Demobrowser and Playground, but also library links like ``q.min.js`` that are used in CodePen examples.
 
 .. code-block:: bash
 
@@ -295,14 +295,6 @@ The gist of it is:
     (Unclear if this is actually necessary).
 
 
-.. _pages/project/release_how_to_build.rst#file_an_issue_for_jsFiddle:
-
-File an issue for jsFiddle
-==========================
-
-`jsFiddle  <http://jsfiddle.net/>`_ offers the current qooxdoo versions in its library selection dropdown. To get that updated, you have to file a issue at the `jsfiddle-issues repository <https://github.com/jsfiddle/jsfiddle-issues/issues/>`_ on github. Take a look at this `issue <https://github.com/jsfiddle/jsfiddle-issues/issues/421>`_ for details.
-
-
 .. _pages/project/release_how_to_build.rst#post_processing:
 
 Post processing
@@ -375,23 +367,12 @@ Update Wiki
 * Adjust the `qx.Website Download page <http://qooxdoo.org/downloads/qx.website>`_.
 * Adjust the `Start page <http://qooxdoo.org/>`_. (all 4 sections: download links, gzipped lib sizes)
 
-.. _pages/project/release_how_to_build.rst#update_contrib:
-
-Update Contrib
---------------
-
-(*workspace on internal server*)
-
-* Adjust the symlinks in qooxdoo.contrib/trunk/qooxdoo.
-* Update the *qxPatchReleases* map in ``tool/admin/bin/repository.py`` (near the top of the file).
-* Simulator contrib: Add a tag corresponding to the qx patch release.
 
 .. _pages/project/release_how_to_build.rst#nightly_testing:
 
 Nightly Testing
 ---------------
 
-* Contribution skeleton test: Create a symlink to the qx git repo as expected by the demo's config.json ("../../../../qooxdoo/${QXVERSION}")
 * Branch application tests: Update the maintenance branch name in the ``qooxdoo-git-update-patch`` job's Source Code Management and Execute Shell sections
 
 .. _pages/project/release_how_to_build.rst#announcements:

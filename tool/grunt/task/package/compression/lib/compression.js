@@ -33,6 +33,13 @@
 // third party
 var U2 = require("uglify-js");
 
+// lib (modules may be injected by test env)
+// TODO: needs to be a proper dependency
+// or publishing of this package won't be possible
+if (!qx) { var qx = {}; }
+if (!qx.tool) { qx.tool = {}; }
+qx.tool.Cache = (qx.tool.Cache || require('../../../../lib/qx/tool/Cache'));
+
 //------------------------------------------------------------------------------
 // Attic
 //------------------------------------------------------------------------------
@@ -309,13 +316,16 @@ function replacePrivates(classId, jsCode) {
 module.exports = {
   /**
    * Compress code and apply optimizations on top (via options).
+   * What should be compressed can be provided as code or as tree (AST)
+   * - if there is a tree it takes precedence over given code.
    *
    * @param {string} classId
    * @param {string} jsCode - code to be compressed
+   * @param {Object} envMap - environment settings
    * @param {Object} options - whether qx specific optimizations should be enabled
    * @return {string} code - compressed code
    */
-  compress: function(classId, jsCode, options) {
+  compress: function(classId, jsCode, envMap, options) {
     var opts = {};
     var compressedCode = jsCode;
 
@@ -325,10 +335,56 @@ module.exports = {
 
     // merge options and default values
     opts = {
-      privates: options.privates === false ? false : true
+      privates: options.privates === false ? false : true,
+      cachePath: options.cachePath === undefined ? null : options.cachePath,
+    };
+    // Special handling for regular expression literal since we need to
+    // convert it back to a regex object, otherwise it will be decoded
+    // as a string and the regular expression would be lost.
+    var adjustRegexLiteral = function(key, value) {
+      // deserialize regex strings (e.g. "/my[rR]egex/i") but
+      // ignore strings containing paths (e.g. /source/class/foo/).
+      if (key === 'value'
+          && typeof(value) === "string"
+          && value.match(/^\/.*\/[gmsiy]*$/)
+          && value.match(/^\/(\w+\/)+$/) === null) {
+        if (value.slice(-1) === "/") {
+          value = new RegExp(value.substring(1, value.length-1));
+        } else {
+          var posOfSlash = value.lastIndexOf("/");
+          value = new RegExp(value.substr(1, posOfSlash-1), value.substr(posOfSlash+1));
+        }
+      }
+      return value;
+    };
+    var debugClass = function(classId) {
+      if (classId === "qx.REPLACE.THIS") {
+        var escg = require("escodegen");
+        console.log("comp", escg.generate(tree));
+      }
     };
 
     // compress with UglifyJS2
+
+    // if there's an esprima AST use it
+    var cacheOrNull = (opts.cachePath) ? new qx.tool.Cache(opts.cachePath) : null;
+
+    if (cacheOrNull) {
+      var curCacheId = cacheOrNull.createCacheId('tree', envMap, classId);
+      if (cacheOrNull.has(curCacheId)) {
+        var tree = JSON.parse(cacheOrNull.read(curCacheId), adjustRegexLiteral);
+        if (tree !== null && typeof(tree) !== 'undefined') {
+          // debugClass(classId);
+          var ast = U2.AST_Node.from_mozilla_ast(tree);
+          ast.figure_out_scope();
+          var compressor = U2.Compressor({warnings: false});
+          ast = ast.transform(compressor);
+          compressedCode = ast.print_to_string();
+        }
+      }
+    }
+
+    // compress in any case
     var result = U2.minify(compressedCode, {fromString: true});
     compressedCode = result.code;
 
