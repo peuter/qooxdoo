@@ -733,7 +733,7 @@ qx.Bootstrap.define("qx.event.handler.GestureCore", {
      */
     __fireLongTap : function(domEvent, target) {
       var gesture = this.__gesture[domEvent.pointerId];
-      if (gesture) {
+      if (gesture && target.getAttribute("qxlongtapable") == "on") {
         this._fireEvent(domEvent, "longtap", domEvent.target || target);
         gesture.longTapTimer = null;
         gesture.isTap = false;

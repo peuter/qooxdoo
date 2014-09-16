@@ -797,6 +797,15 @@ qx.Class.define("qx.ui.core.Widget",
     },
 
 
+    longtapable :
+    {
+      check : "Boolean",
+      init : false,
+      event : "changeLongtapable",
+      apply : "_applyLongtapable"
+    },
+
+
     /**
      * Whether to show a context menu and which one
      */
@@ -2212,6 +2221,17 @@ qx.Class.define("qx.ui.core.Widget",
     },
 
 
+    _applyLongtapable : function(value)
+    {
+      var el = this.getContentElement().getDomElement();
+
+      if (value) {
+        el.setAttribute("qxlongtapable", "on");
+      } else {
+        el.removeAttribute("qxlongtapable");
+      }
+    },
+
 
 
     /*
@@ -3029,6 +3049,9 @@ qx.Class.define("qx.ui.core.Widget",
           this.addListener("longtap", this._onContextMenuOpen);
           value.addListener("changeVisibility", this._onBeforeContextMenuOpen, this);
         }
+
+        // Enable longtap support
+        this.setLongtapable(true);
       }
     },
 
