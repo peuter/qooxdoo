@@ -2221,14 +2221,25 @@ qx.Class.define("qx.ui.core.Widget",
     },
 
 
-    _applyLongtapable : function(value)
+    __updateLongtapable : function(value)
     {
       var el = this.getContentElement().getDomElement();
-
       if (value) {
         el.setAttribute("qxlongtapable", "on");
       } else {
         el.removeAttribute("qxlongtapable");
+      }
+    },
+
+
+    _applyLongtapable : function(value)
+    {
+      if (this.getContentElement().getDomElement()) {
+        this.__updateLongtapable(value);
+      } else {
+        this.addListenerOnce("appear", function() {
+          this.__updateLongtapable(value);
+        }, this);
       }
     },
 
