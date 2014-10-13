@@ -317,13 +317,16 @@ qx.Class.define("qx.theme.manager.Decoration",
     /**
      * Clears internal caches and removes all previously created CSS classes.
      */
-    clearDecoration : function()
+    clear : function()
     {
       // remove aliases
       var aliasManager = qx.util.AliasManager.getInstance();
-      var aliases = this.getTheme() || [];
-      for (var alias in aliases) {
-        aliasManager.remove(alias);
+
+      var theme = this.getTheme();
+      if (!aliasManager.isDisposed() && theme && theme.alias) {
+        for (var alias in theme.aliases) {
+          aliasManager.remove(alias, theme.aliases[alias]);
+        }
       }
 
       // remove old rules
@@ -331,6 +334,24 @@ qx.Class.define("qx.theme.manager.Decoration",
 
       this._disposeMap("__dynamic");
       this.__dynamic = {};
+    },
+
+
+    /**
+     * Refreshes all decorator by clearing internal caches and re applying
+     * aliases.
+     */
+    refresh : function()
+    {
+      this.clear();
+
+      var aliasManager = qx.util.AliasManager.getInstance();
+      var theme = this.getTheme();
+      if (theme && theme.alias) {
+        for (var alias in theme.aliases) {
+          aliasManager.add(alias, theme.aliases[alias]);
+        }
+      }
     }
   },
 
@@ -343,6 +364,6 @@ qx.Class.define("qx.theme.manager.Decoration",
   */
 
   destruct : function() {
-    this.clearDecoration();
+    this.clear();
   }
 });
