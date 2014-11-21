@@ -119,7 +119,7 @@ qx.Class.define("qx.event.handler.Pointer",
       }
 
       // respect anonymous elements
-      while (target && target.getAttribute("qxanonymous")) {
+      while (target && target.getAttribute && target.getAttribute("qxanonymous")) {
         target = target.parentNode
       }
 
