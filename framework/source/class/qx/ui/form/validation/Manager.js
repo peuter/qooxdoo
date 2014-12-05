@@ -499,7 +499,11 @@ qx.Class.define("qx.ui.form.validation.Manager",
               tooltip.placeToWidget(item);
             }
 
-            tooltip.show();
+            // Only show the tooltip if we're not on the mobile devices
+            if (!qx.core.Environment.get("device.touch")) {
+              tooltip.show();
+            }
+
             return;
           }
         }
