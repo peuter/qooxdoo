@@ -91,15 +91,17 @@ qx.Bootstrap.define("qxWeb", {
      * to {@link q}.
      *
      * @param module {Map} A map containing the methods to attach.
+     * @param override {Boolean?false} Force to override
      */
-    $attach : function(module) {
+    $attach : function(module, override) {
       for (var name in module) {
-        if (qx.core.Environment.get("qx.debug")) {
-          if (qxWeb.prototype[name] != undefined && Array.prototype[name] == undefined) {
+        if (qxWeb.prototype[name] != undefined && Array.prototype[name] == undefined && override !== true) {
+          if (qx.core.Environment.get("qx.debug")) {
             throw new Error("Method '" + name + "' already available.");
           }
+        } else {
+          qxWeb.prototype[name] = module[name];
         }
-        qxWeb.prototype[name] = module[name];
       }
     },
 
@@ -110,10 +112,10 @@ qx.Bootstrap.define("qxWeb", {
      *
      * @param module {Map} A map containing the methods to attach.
      */
-    $attachStatic : function(module) {
+    $attachStatic : function(module, override) {
       for (var name in module) {
         if (qx.core.Environment.get("qx.debug")) {
-          if (qxWeb[name] != undefined) {
+          if (qxWeb[name] != undefined && override !== true) {
             throw new Error("Method '" + name + "' already available as static method.");
           }
         }

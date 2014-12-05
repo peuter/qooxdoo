@@ -187,6 +187,43 @@ testrunner.define({
     var coll2 = q("h2", q(container1));
     this.assertEquals(1, coll2.length);
     this.assertEquals("inner1", coll2[0].id);
+  },
+
+  testOverrideQxWebPrototypeMethods: function () {
+    this.assertUndefined(qxWeb.prototype['__attach_test']);
+
+    qxWeb.$attach({
+      "__attach_test": function () {
+        return "foo";
+      }
+    });
+    this.assertNotUndefined(qxWeb.prototype['__attach_test']);
+    this.assertEquals("foo", qxWeb(document.body).__attach_test());
+
+    if (qx.core.Environment.get("qx.debug")) {
+      this.assertException(function () {
+        qxWeb.$attach({
+          "__attach_test": function () {
+            return "bar";
+          }
+        });
+      }, Error);
+    } else {
+      qxWeb.$attach({
+        "__attach_test": function () {
+          return "bar";
+        }
+      });
+    }
+
+    this.assertEquals("foo", qxWeb(document.body).__attach_test());
+
+    qxWeb.$attach({
+      "__attach_test": function () {
+        return "bar";
+      }
+    }, true);
+    this.assertEquals("bar", qxWeb(document.body).__attach_test());
   }
 });
 
@@ -1911,6 +1948,22 @@ testrunner.define({
 
     test.emit("changeName", sendData);
     this.assertEquals(1, called);
+  },
+
+
+  testOnceWith3 : function() {
+    var test = q.create("<div/>");
+    var self = this;
+    var called = 0;
+    var listener = function() {
+      called++;
+    };
+    test.once("changeName", listener);
+    test.once("changeName", listener);
+    test.once("changeName", listener);
+
+    test.emit("changeName");
+    this.assertEquals(3, called);
   },
 
 

@@ -298,22 +298,6 @@ qx.Class.define("qx.ui.menu.Menu",
 
 
     /**
-     * Opens the menu at the mouse position
-     *
-     * @param e {qx.event.type.Mouse}  Mouse event to align to
-     * @deprecated {4.0}
-     */
-    openAtMouse : function(e)
-    {
-      if (qx.core.Environment.get("qx.debug")) {
-        qx.log.Logger.deprecatedMethodWarning(arguments.callee,
-          "Please use '_onPointerOver' instead.");
-      }
-      this.openAtPointer(e);
-    },
-
-
-    /**
      * Opens the menu at the pointer position
      *
      * @param e {qx.event.type.Pointer} Pointer event to align to
@@ -651,7 +635,12 @@ qx.Class.define("qx.ui.menu.Menu",
       }
       else if (top === 0)
       {
-        var height = this._placementTarget.getBounds().top;
+        // Target can be an object with top and left. That happens when a menu
+        // opens as a contextmenu.
+        // Target is a widget when a menu opens with help of an other widget
+        // like a button. In that case getBounds returns an object with top and left.
+        var target = this._placementTarget;
+        var height = target.top || target.getBounds().top;
         this._assertSlideBar(function() {
           this.setHeight(height);
         });
