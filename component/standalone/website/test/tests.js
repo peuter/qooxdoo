@@ -3511,8 +3511,7 @@ testrunner.define({
 
   classname : "MatchMedia",
 
-  setUp : function()
-  {
+  setUp : function() {
     testrunner.globalSetup.call(this);
 
     if (qxWeb.env.get("qx.debug")) {
@@ -3523,15 +3522,17 @@ testrunner.define({
     this.__iframe.appendTo(this.sandbox[0]);
   },
 
-  tearDown : testrunner.globalTeardown,
+  tearDown : function() {
+    testrunner.globalTeardown.call(this);
+    qxWeb(window).off('message', null, null);
+  },
 
   hasNoLegacyIe : function() {
     return (qxWeb.env.get("engine.name") != "mshtml" ||
       qxWeb.env.get("browser.documentmode") > 8);
   },
 
-  testLandscape : function(){
-
+  testLandscape : function() {
     var iframe = this.__iframe[0];
 
     iframe.width = "500px";
@@ -3543,9 +3544,9 @@ testrunner.define({
       }, this);
     },this);
 
-    window.setTimeout(function(){
+    this.__iframe.on("load", function() {
       iframe.contentWindow.postMessage("all and (orientation:landscape)",'*');
-    },100);
+    });
 
     this.wait(1000);
   },
@@ -3564,15 +3565,14 @@ testrunner.define({
       }, this);
     },this);
 
-    window.setTimeout(function(){
+    this.__iframe.on("load", function() {
       iframe.contentWindow.postMessage("all and (min-width:500px)",'*');
-    },100);
+    });
 
-    this.wait(1000);
+    this.wait(10000);
   },
 
   testMaxWidth : function(){
-
     var iframe = this.__iframe[0];
 
     iframe.width = "500px";
@@ -3584,15 +3584,15 @@ testrunner.define({
       }, this);
     },this);
 
-    window.setTimeout(function(){
+    this.__iframe.on("load", function() {
       iframe.contentWindow.postMessage("all and (max-width:500px)",'*');
-    },100);
+    });
 
     this.wait(1000);
   },
 
-  testAnd : function(){
 
+  testAnd : function(){
     var iframe = this.__iframe[0];
 
     iframe.width = "300px";
@@ -3604,9 +3604,9 @@ testrunner.define({
       }, this);
     },this);
 
-    window.setTimeout(function(){
+    this.__iframe.on("load", function() {
       iframe.contentWindow.postMessage("screen and (min-width: 400px) and (max-width: 700px)",'*');
-    },100);
+    });
 
     this.wait(1000);
   },
@@ -3623,9 +3623,9 @@ testrunner.define({
       }, this);
     },this);
 
-    window.setTimeout(function(){
+    this.__iframe.on("load", function() {
       iframe.contentWindow.postMessage("all and (min-height:500px)",'*');
-    },100);
+    });
 
     this.wait(1000);
   },
@@ -3642,9 +3642,9 @@ testrunner.define({
       }, this);
     },this);
 
-    window.setTimeout(function(){
+    this.__iframe.on("load", function() {
       iframe.contentWindow.postMessage("all and (min-color: 1)",'*');
-    },100);
+    });
 
     this.wait(1000);
   },
@@ -3662,9 +3662,9 @@ testrunner.define({
       }, this);
     },this);
 
-    window.setTimeout(function(){
+    this.__iframe.on("load", function() {
       iframe.contentWindow.postMessage("(min-width: 700px) and (orientation: landscape)",'*');
-    },100);
+    });
 
     this.wait(1000);
   },
@@ -3680,9 +3680,9 @@ testrunner.define({
       }, this);
     },this);
 
-    window.setTimeout(function(){
+    this.__iframe.on("load", function() {
       iframe.contentWindow.postMessage("screen and (max-device-width: 799px)",'*');
-    },100);
+    });
 
     this.wait(1000);
   },
@@ -3698,9 +3698,9 @@ testrunner.define({
       }, this);
     },this);
 
-    window.setTimeout(function(){
+    this.__iframe.on("load", function() {
       iframe.contentWindow.postMessage("screen and (width: 800px)",'*');
-    },100);
+    });
 
     this.wait(1000);
   },
@@ -3716,9 +3716,9 @@ testrunner.define({
       }, this);
     },this);
 
-    window.setTimeout(function(){
+    this.__iframe.on("load", function() {
       iframe.contentWindow.postMessage("screen and (width: 800px)",'*');
-    },100);
+    });
 
     this.wait(1000);
   },
@@ -3733,9 +3733,9 @@ testrunner.define({
       }, this);
     },this);
 
-    window.setTimeout(function(){
+    this.__iframe.on("load", function() {
       iframe.contentWindow.postMessage("not screen and (min-width: 800px)",'*');
-    },100);
+    });
 
     this.wait(1000);
   },
@@ -3774,7 +3774,6 @@ testrunner.define({
 
     this.wait(1000);
   }
-
 });
 
 
@@ -5131,5 +5130,7 @@ testrunner.define({
     datepicker.render();
     this.assertFalse(datepicker.getEnabled());
     this.assertTrue(datepicker.getAttribute("disabled"));
-  }
+
+    datepicker.dispose();
+   }
 });
