@@ -26,13 +26,14 @@
 ##
 
 import re, os, sys, types, base64, struct, codecs
+import xml.etree.cElementTree as et
 
 from misc import filetool, json
 from generator import Context
 from generator.resource.Resource import Resource
 
 class Image(Resource):
-    
+
     def __init__(self, path=None):
         global console
         super(Image, self).__init__(path)
@@ -46,7 +47,7 @@ class Image(Resource):
 
         console = Context.console
 
-    FILE_EXTENSIONS = "png jpeg jpg gif b64.json".split()
+    FILE_EXTENSIONS = "png jpeg jpg gif svg b64.json".split()
     FILE_EXTENSIONPATT = re.compile(r'\.(%s)$' % "|".join(FILE_EXTENSIONS), re.I)
 
     def analyzeImage(self):
@@ -57,7 +58,7 @@ class Image(Resource):
         # imgInfo = (width, height, format/type)
         imgInfo = self.getInfo()
         if not imgInfo or not imgInfo[0] or not imgInfo[1] or not imgInfo[2]:
-            raise RuntimeError, "Unable to get image info from file: %s" % self.path 
+            raise RuntimeError, "Unable to get image info from file: %s" % self.path
 
         self.width  = imgInfo[0]
         self.height = imgInfo[1]
@@ -77,7 +78,7 @@ class Image(Resource):
 
     ##
     # Set object properties via array and keyword arguments;
-    # supports the property format as used in .meta files: 
+    # supports the property format as used in .meta files:
     # [width, height, type [, mapped, off-x, off-y]]
     def fromMeta(self, serialspec, **kwspec):
         if serialspec:
@@ -167,14 +168,14 @@ class Image(Resource):
     # --------------------------------------------------------------------------
     # Methods using the child-classes GifFile, ...
     # --------------------------------------------------------------------------
-    
+
     CHILD_CLASSES = []
 
     def getInfo(self):
         ''' Returns (width, height, "type") of the image'''
         filename = self.path
         classes = self.CHILD_CLASSES
-        
+
         for cls in classes:
             img = cls(filename)
             if img.verify():
@@ -261,6 +262,78 @@ class PngFile(Image):
         return (width, height)
 
 
+class SvgFile(Image):
+    DPI = 72
+
+    def __init__(self, path):
+        super(self.__class__, self).__init__(path)
+        self.fp = open(self.path, "r")
+
+    def __del__(self):
+        self.fp.close()
+
+    def type(self):
+        return "svg"
+
+    def verify(self):
+        tag = None
+        try:
+            for event, el in et.iterparse(self.fp, ('start',)):
+                tag = el.tag
+                break
+        except (struct.error, IOError, SyntaxError):
+            # SyntaxError: seems to be no valid XML (or XML at all)
+            pass
+        return tag == '{http://www.w3.org/2000/svg}svg'
+
+    def convert_to_pixels(self, str_value):
+        value = -1
+
+        if len(str_value) > 0:
+            str_value = re.sub(r"[ ,]", "", str_value)
+            str_value = str_value.replace(' ', '').replace(',', '')
+            data = re.compile('(\d+(?:\.\d+)?)(\%|em|ex|px|cm|mm|in|pt|pc)?').match(str_value)
+
+            if data:
+                data = data.groups()
+
+                if data[0]:
+                    value = float(data[0])
+
+                if data[1]:
+                    unit = data[1]
+
+                    if unit == 'cm':
+                        value = value * SvgFile.DPI / 2.54
+                    elif unit == 'mm':
+                        value = value * SvgFile.DPI / 25.4
+                    elif unit == 'in':
+                        value = value * SvgFile.DPI
+                    elif unit == 'pt':
+                        value = value * SvgFile.DPI / 72
+                    elif unit == 'pc':
+                        value = value * SvgFile.DPI / 6
+                    elif unit != 'px':
+                        value = -1
+
+        return int(round(value))
+
+    def size(self):
+        self.fp.seek(0)
+        tag = None
+        width = -1
+        height = -1
+        try:
+            for event, el in et.iterparse(self.fp, ('start',)):
+                tag = el.tag
+                width = self.convert_to_pixels(el.attrib["width"])
+                height = self.convert_to_pixels(el.attrib["height"])
+                break
+        except (struct.error, IOError, KeyError):
+            pass
+        return (width, height)
+
+
 # http://www.obrador.com/essentialjpeg/HeaderInfo.htm
 class JpegFile(Image):
     def __init__(self, path):
@@ -283,7 +356,7 @@ class JpegFile(Image):
         return "jpeg"
 
     sof_range = tuple(range(0xffc0,0xffc3+1) + range(0xffc9,0xffcb+1))  # SOFn according to spec.(ITU T.81)
-    segments = { 
+    segments = {
         # (http://en.wikipedia.org/wiki/Jpeg)
         (0xffd8,) : 0,  # soi - no length bytes, no payload
         sof_range : 2,  # sofN - 2 length bytes - N is someOf(0..f) (low-nibble of marker)
@@ -361,4 +434,4 @@ class Base64File(Image):
 
 ##
 # Filling Image's child classes list when those classes exist
-Image.CHILD_CLASSES = [PngFile, GifFile, JpegFile, Base64File]
+Image.CHILD_CLASSES = [PngFile, GifFile, JpegFile, SvgFile, Base64File]

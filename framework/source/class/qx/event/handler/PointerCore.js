@@ -88,6 +88,9 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
     this.__eventNames = [];
     this.__buttonStates = [];
     this.__activeTouches = [];
+    this.__processedFlag = "$$qx" +
+      this.classname.substr(this.classname.lastIndexOf(".") + 1) +
+      "Processed";
 
     var engineName = qx.core.Environment.get("engine.name");
     var docMode = parseInt(qx.core.Environment.get("browser.documentmode"), 10);
@@ -122,6 +125,7 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
     __buttonStates : null,
     __primaryIdentifier : null,
     __activeTouches : null,
+    __processedFlag : null,
 
     /**
      * Adds listeners to native pointer events if supported
@@ -177,10 +181,10 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
      * @param domEvent {Event} Native DOM event
      */
     _onTouchEvent: function(domEvent) {
-      if (domEvent.$$qxProcessed) {
+      if (domEvent[this.__processedFlag]) {
         return;
       }
-      domEvent.$$qxProcessed = true;
+      domEvent[this.__processedFlag] = true;
       var type = qx.event.handler.PointerCore.TOUCH_TO_POINTER_MAPPING[domEvent.type];
       var changedTouches = domEvent.changedTouches;
 
@@ -273,10 +277,10 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
     * @param domEvent {Event} Native DOM event
     */
     _onMouseEvent : function(domEvent) {
-      if (domEvent.$$qxProcessed) {
+      if (domEvent[this.__processedFlag]) {
         return;
       }
-      domEvent.$$qxProcessed = true;
+      domEvent[this.__processedFlag] = true;
 
       if (this._isSimulatedMouseEvent(domEvent.clientX, domEvent.clientY)) {
         /*
@@ -403,7 +407,9 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
       type = type || domEvent.type;
 
       var gestureEvent;
-      if (type == "pointerdown" || type == "pointerup" || type == "pointermove") {
+      if ((domEvent.pointerType !== "mouse" || domEvent.button === 0) &&
+        (type == "pointerdown" || type == "pointerup" || type == "pointermove"))
+      {
         gestureEvent = new qx.event.type.dom.Pointer(
           qx.event.handler.PointerCore.POINTER_TO_GESTURE_MAPPING[type],
           domEvent);

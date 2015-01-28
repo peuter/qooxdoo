@@ -88,7 +88,11 @@ qx.Class.define("qx.ui.table.pane.Scroller",
     this._paneClipper.addListener("pointerdown", this._onPointerdownPane, this);
     this._paneClipper.addListener("tap", this._onTapPane, this);
     this._paneClipper.addListener("contextmenu", this._onContextMenu, this);
-    this._paneClipper.addListener("dbltap", this._onDbltapPane, this);
+    if (qx.core.Environment.get("device.type") === "desktop") {
+      this._paneClipper.addListener("dblclick", this._onDbltapPane, this);
+    } else {
+      this._paneClipper.addListener("dbltap", this._onDbltapPane, this);
+    }
     this._paneClipper.addListener("resize", this._onResizePane, this);
 
     // if we have overlayed scroll bars, we should use a separate container
@@ -539,7 +543,7 @@ qx.Class.define("qx.ui.table.pane.Scroller",
      *
      * @param scrollY {Integer} The new scroll position.
      * @param renderSync {Boolean?false} Whether the table update should be
-     *     performed synchonously.
+     *     performed synchronously.
      */
     setScrollY : function(scrollY, renderSync)
     {
