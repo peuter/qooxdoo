@@ -452,14 +452,6 @@ qx.Class.define("qx.ui.basic.Image",
         return;
       }
 
-      // Detect if the image registry knows this image
-      // Check for images in HiDPI
-      var m = source.match(/^(.*)\.([a-zA-z]*)$/);
-      var pathx2 = null;
-      if((window.devicePixelRatio || 1) > 1 && m && m[1] && m[2]){
-        pathx2 = m[1] + "@2x." + m[2];
-      }
-
       this.__checkForContentElementSwitch(source);
 
       if ((qx.core.Environment.get("engine.name") == "mshtml") &&
@@ -819,7 +811,15 @@ qx.Class.define("qx.ui.basic.Image",
         }
       }
 
+<<<<<<< HEAD
       el.setSource(source);
+=======
+      if (highResSource) {
+        this._createHighResolutionOverlay(highResSource);
+      } else {
+        el.setSource(source);
+      }
+>>>>>>> Sync image to be identical with upstream
     },
 
     /**
