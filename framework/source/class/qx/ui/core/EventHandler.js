@@ -194,7 +194,7 @@ qx.Class.define("qx.ui.core.EventHandler",
 
       var widgetTarget = qx.ui.core.Widget.getWidgetByElement(domTarget);
       var targetChanged = false;
-      while (widgetTarget && widgetTarget.isAnonymous && widgetTarget.isAnonymous())
+      while (widgetTarget && widgetTarget.isAnonymous())
       {
         var targetChanged = true;
         widgetTarget = widgetTarget.getLayoutParent();
@@ -224,7 +224,7 @@ qx.Class.define("qx.ui.core.EventHandler",
         var domRelatedTarget = domEvent.getRelatedTarget();
 
         var widgetRelatedTarget = qx.ui.core.Widget.getWidgetByElement(domRelatedTarget);
-        while (widgetRelatedTarget && widgetRelatedTarget.isAnonymous && widgetRelatedTarget.isAnonymous()) {
+        while (widgetRelatedTarget && widgetRelatedTarget.isAnonymous()) {
           widgetRelatedTarget = widgetRelatedTarget.getLayoutParent();
         }
 
@@ -248,7 +248,7 @@ qx.Class.define("qx.ui.core.EventHandler",
 
 
       var currentWidget = qx.ui.core.Widget.getWidgetByElement(currentTarget);
-      if (!currentWidget || (currentWidget.isAnonymous && currentWidget.isAnonymous())) {
+      if (!currentWidget || currentWidget.isAnonymous()) {
         return;
       }
 
@@ -297,7 +297,7 @@ qx.Class.define("qx.ui.core.EventHandler",
       if (orig)
       {
         var widgetOriginalTarget = qx.ui.core.Widget.getWidgetByElement(orig);
-        while (widgetOriginalTarget && widgetOriginalTarget.isAnonymous && widgetOriginalTarget.isAnonymous()) {
+        while (widgetOriginalTarget && widgetOriginalTarget.isAnonymous()) {
           widgetOriginalTarget = widgetOriginalTarget.getLayoutParent();
         }
 
