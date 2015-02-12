@@ -87,20 +87,16 @@ def getQxVersion():
 # let package.json take effect
 # installes all NPM modules *locally* (but gets better with each run due to
 # npm module caching)
-def npm_install(skel_dir, options):
+def npm_install(skelDir, options):
     shellCmd = ShellCmd()
     npm_install = 'npm install --loglevel warn'
-    console.log("Adding Node.js modules...")
-    shellCmd.execute(npm_install, skel_dir)
-    if options.type == 'contribution':
-        shellCmd.execute(npm_install, os.path.join(skel_dir, 'demo/default'))
+    console.log("Running '" + npm_install + "'")
+    shellCmd.execute(npm_install, skelDir)
 
 
 def copyGenericIfNoSpecific(specificFilename, genericFilepath, destFilepath, appType):
     if not os.path.isfile(os.path.join(destFilepath, specificFilename)):
       shutil.copy(genericFilepath, destFilepath)
-      if appType == "contribution":
-          shutil.copy(genericFilepath, os.path.join(destFilepath, "demo", "default"))
 
 def createApplication(options):
     out = options.out
@@ -124,8 +120,7 @@ def createApplication(options):
         listSkeletons(console, APP_INFOS)
         sys.exit(1)
 
-    is_contribution = options.type == "contribution"
-    appDir = os.path.join(outDir, "trunk") if is_contribution else outDir
+    appDir = outDir
     app_infos = APP_INFOS[options.type]
 
     # copy the template structure
@@ -152,9 +147,6 @@ def createApplication(options):
 
     # rename files
     rename_folders(appDir, options.namespace)
-    if options.type == "contribution":
-        rename_folders(os.path.join(appDir, "demo", "default"), options.namespace)
-
     # clean out unwanted
     cleanSkeleton(appDir)
 
@@ -275,11 +267,6 @@ def determineRelPathToSdk(appDir, framework_dir, options):
         console.error("Relative path to qooxdoo directory is not correct: '%s'" % relPath)
         sys.exit(1)
 
-    if options.type == "contribution":
-        #relPath = os.path.join(os.pardir, os.pardir, "qooxdoo", QOOXDOO_VERSION)
-        #relPath = re.sub(r'\\', "/", relPath)
-        pass
-
     return relPath
 
 
@@ -309,16 +296,11 @@ def renderTemplates(inAndOutFilePaths, options, relPathToSdk, absPathToSdk, rend
         config = Template(open(inFile).read())
         out = open(outFile, "w")
 
-        # hack for uncommon contribution dir structure
-        contribDemoRelPathToSdk = ""
-        if options.type == "contribution"  and "demo/default" in outFile:
-          contribDemoRelPathToSdk = os.path.join("../../", relPathToSdk)
-
         context = {
           "Name": options.name,
           "Namespace": options.namespace,
           "NamespacePath" : (options.namespace).replace('.', '/'),
-          "REL_QOOXDOO_PATH": contribDemoRelPathToSdk if contribDemoRelPathToSdk else relPathToSdk,
+          "REL_QOOXDOO_PATH": relPathToSdk,
           "ABS_QOOXDOO_PATH": absPathToSdk,
           "QOOXDOO_VERSION": QOOXDOO_VERSION,
           "Cache" : options.cache,
@@ -446,34 +428,11 @@ def isNodeInstalled():
 
 
 ##
-# if Node modules have already been downloaded, use those
-# TODO: invalidate cache on tool change
-def getCachedNodeModules(options):
-    # using dedicated cache path, so it's not deleted with 'distclean' jobs
-    cache_path = os.path.join(FRAMEWORK_DIR, "tool/cache/node")
-    package_json = os.path.join(FRAMEWORK_DIR, "tool/grunt/data/package.generalized.json")
-    modules_path = os.path.join(cache_path, "node_modules")
-    if not os.path.exists(modules_path):
-        # parent dir
-        if not os.path.exists(cache_path):
-            os.makedirs(cache_path)
-        # readme.txt
-        (open(os.path.join(cache_path,"readme.txt"), 'w') # TODO: should use os.open(..,os.O_CREAT|os.O_EXCL|os.O_RDWR) for locking
-            .write("toolchain_grunt_modules")) # suppress npm install warnings
-        # package.json
-        shutil.copy(package_json, os.path.join(cache_path,"package.json"))
-        # npm install
-        npm_install(cache_path, options)
-    return modules_path
-
-
-##
 # if Node is installed, provide the necessary modules for Grunt
 def runNpmIf(outDir, options):
     if not isNodeInstalled():
         return
-    modules_root = getCachedNodeModules(options)
-    shutil.copytree(modules_root, os.path.join(outDir,"node_modules"))
+    npm_install(outDir, options)
     return
 
 
