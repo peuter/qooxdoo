@@ -142,6 +142,14 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
     }
   },
 
+  events :
+  {
+    /**
+     * Fired when the finite state machine terminates. Data is the last state
+     * before termination.
+     */
+    "terminated" : "qx.event.type.Data"
+  },
 
   properties :
   {
@@ -244,7 +252,17 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
     __groupToFriendly            : null,
     __friendlyToGroups           : null,
     __bEventProcessingInProgress : false,
+    __terminated                 : true,
 
+    /**
+     * Checks whether the finite state machine is terminated or not.
+     *
+     * @return {Boolean} If the finite state machine is terminated.
+     */
+    isTerminated : function()
+    {
+      return this.__terminated;
+    },
 
     /**
      * Add a state to the finite state machine.
@@ -582,6 +600,8 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
      */
     start : function()
     {
+      this.__terminated = false;
+
       var stateName = this.__startState;
 
       if (stateName == null)
@@ -763,9 +783,17 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
      * Event listener for all event types in the finite state machine
      *
      * @param event {qx.event.type.Event} The event that was dispatched.
+     *
+     * @throws {Error} If the finite state machine is terminated.
      */
     eventListener : function(event)
     {
+      if (this.__terminated)
+      {
+        throw new Error("Cannot listen to event '" + event.getType() +
+                        "', because the finite state machine is not running.");
+      }
+
       // Events are enqueued upon receipt.  Some events are then processed
       // immediately; other events get processed later.  We need to allow the
       // event dispatcher to free the source event upon our return, so we'll
@@ -796,9 +824,16 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
      *   type qx.event.type.Data is instantiated and this data is applied to
      *   it.
      *
+     * @throws {Error} If the finite state machine is terminated.
      */
     fireImmediateEvent : function(type, target, data)
     {
+      if (this.__terminated)
+      {
+        throw new Error("Cannot fire event '" + type +
+                        "', because the finite state machine is not running.");
+      }
+
       if (data)
       {
         var event =
@@ -1120,6 +1155,12 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
               this.setNextState(nextState);
               break;
 
+            case qx.util.fsm.FiniteStateMachine.StateChange.TERMINATE:
+              // Terminate fsm
+              this.__terminated = true;
+              this.setNextState(null);
+              break;
+
             default:
               throw new Error("Internal error: invalid nextState");
           }
@@ -1183,6 +1224,17 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
         {
           // ... then dispose it now that it's no longer in use
           currentState.dispose();
+        }
+
+        // It the fsm has terminated, stop right here
+        if (this.__terminated)
+        {
+          if (debugFunctions)
+          {
+            this.debug(this.getName() + "#" + "TERMINATED");
+          }
+          this.fireDataEvent("terminated", thisState);
+          return true;
         }
 
         // Reset currentState to the new state object
