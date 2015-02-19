@@ -252,7 +252,7 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
     __groupToFriendly            : null,
     __friendlyToGroups           : null,
     __bEventProcessingInProgress : false,
-    __bTerminated                : true,
+    __terminated                 : true,
 
     /**
      * Checks whether the finite state machine is terminated or not.
@@ -261,7 +261,7 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
      */
     isTerminated : function()
     {
-      return this.__bTerminated;
+      return this.__terminated;
     },
 
     /**
@@ -600,7 +600,7 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
      */
     start : function()
     {
-      this.__bTerminated = false;
+      this.__terminated = false;
 
       var stateName = this.__startState;
 
@@ -783,15 +783,15 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
      * Event listener for all event types in the finite state machine
      *
      * @param event {qx.event.type.Event} The event that was dispatched.
+     *
+     * @throws {Error} If the finite state machine is terminated.
      */
     eventListener : function(event)
     {
-      if (this.__bTerminated)
+      if (this.__terminated)
       {
-        this.debug(this.getName() + ": Cannot listen to event '" +
-                   event.getType() +
-                   "', because the finite state machine is not running.");
-        return;
+        throw new Error("Cannot listen to event '" + event.getType() +
+                        "', because the finite state machine is not running.");
       }
 
       // Events are enqueued upon receipt.  Some events are then processed
@@ -824,14 +824,14 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
      *   type qx.event.type.Data is instantiated and this data is applied to
      *   it.
      *
+     * @throws {Error} If the finite state machine is terminated.
      */
     fireImmediateEvent : function(type, target, data)
     {
-      if (this.__bTerminated)
+      if (this.__terminated)
       {
-        this.debug(this.getName() + ": Cannot listen to event '" + type +
-                   "', because the finite state machine is not running.");
-        return;
+        throw new Error("Cannot fire event '" + type +
+                        "', because the finite state machine is not running.");
       }
 
       if (data)
@@ -1157,7 +1157,7 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
 
             case qx.util.fsm.FiniteStateMachine.StateChange.TERMINATE:
               // Terminate fsm
-              this.__bTerminated = true;
+              this.__terminated = true;
               this.setNextState(null);
               break;
 
@@ -1227,7 +1227,7 @@ qx.Class.define("qx.util.fsm.FiniteStateMachine",
         }
 
         // It the fsm has terminated, stop right here
-        if (this.__bTerminated)
+        if (this.__terminated)
         {
           if (debugFunctions)
           {
