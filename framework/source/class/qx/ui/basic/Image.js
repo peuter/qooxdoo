@@ -752,7 +752,7 @@ qx.Class.define("qx.ui.basic.Image",
 
       var decorator = qx.theme.manager.Decoration.getInstance().resolve(this.getDecorator());
 
-      if (el.getNodeName() == "div" || highResSource && decorator) {
+      if (el.getNodeName() == "div" || (highResSource && decorator)) {
 
         // if the decorator defines any CSS background-image
         if (decorator) {
