@@ -175,11 +175,11 @@ qx.Bootstrap.define("qx.io.ImageLoader",
      * This method works asychronous.
      *
      * @param source {String} Image source to load
-     * @param callback {Function} Callback function to execute
+     * @param callback {Function?} Callback function to execute
      *   The first parameter of the callback is the given source url, the
      *   second parameter is the data entry which contains additional
      *   information about the image.
-     * @param context {Object} Context in which the given callback should be executed
+     * @param context {Object?} Context in which the given callback should be executed
      */
     load : function(source, callback, context)
     {
@@ -273,6 +273,18 @@ qx.Bootstrap.define("qx.io.ImageLoader",
 
 
     /**
+     * Calls a method based on qx.globalErrorHandling
+     */
+    __onload: function () {
+      var callback = qx.core.Environment.select("qx.globalErrorHandling", {
+        "true": qx.event.GlobalError.observeMethod(this.__onLoadHandler),
+        "false": this.__onLoadHandler
+      })
+      callback.apply(this, arguments);
+    },
+
+
+    /**
      * Internal event listener for all load/error events.
      *
      * @signature function(event, element, source)
@@ -281,19 +293,17 @@ qx.Bootstrap.define("qx.io.ImageLoader",
      * @param element {Element} DOM element which represents the image
      * @param source {String} The image source loaded
      */
-    __onload : qx.event.GlobalError.observeMethod(function(event, element, source)
-    {
+    __onLoadHandler: function (event, element, source) {
       // Shorthand
       var entry = this.__data[source];
 
-      var isImageAvailable = function(imgElem) {
+      var isImageAvailable = function (imgElem) {
         return (imgElem && imgElem.height !== 0);
       };
 
       // [BUG #7497]: IE11 doesn't properly emit an error event
       // when loading fails so augment success check
-      if (event.type === "load" && isImageAvailable(element))
-      {
+      if (event.type === "load" && isImageAvailable(element)) {
         // Store dimensions
         entry.loaded = true;
         entry.width = this.__getWidth(element);
@@ -301,13 +311,11 @@ qx.Bootstrap.define("qx.io.ImageLoader",
 
         // try to determine the image format
         var result = this.__knownImageTypesRegExp.exec(source);
-        if (result != null)
-        {
+        if (result != null) {
           entry.format = result[1];
         }
       }
-      else
-      {
+      else {
         entry.failed = true;
       }
 
@@ -323,10 +331,10 @@ qx.Bootstrap.define("qx.io.ImageLoader",
       delete entry.element;
 
       // Execute callbacks
-      for (var i=0, l=callbacks.length; i<l; i+=2) {
-        callbacks[i].call(callbacks[i+1], source, entry);
+      for (var i = 0, l = callbacks.length; i < l; i += 2) {
+        callbacks[i].call(callbacks[i + 1], source, entry);
       }
-    }),
+    },
 
 
     /**

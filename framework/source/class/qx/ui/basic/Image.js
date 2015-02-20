@@ -916,7 +916,7 @@ qx.Class.define("qx.ui.basic.Image",
         return;
       }
 
-      // Output a warning if the image could not loaded and quit
+      /// Output a warning if the image could not loaded and quit
       if (imageInfo.failed) {
         this.warn("Image could not be loaded: " + source);
         this.fireEvent("loadingFailed");

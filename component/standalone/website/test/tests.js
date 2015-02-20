@@ -4702,7 +4702,13 @@ testrunner.define({
 
     var today = q('.qx-calendar-today', cal);
     var yesterday = today.getPrev();
-    var firstDayInCalendar = q('.qx-calendar-othermonth', cal).eq(0);
+
+    // if today is the first day of the week we have to get previous day row
+    if (yesterday.length === 0) {
+      yesterday = today.getParents().getPrev().getChildren(':last');
+    }
+
+    var firstDayInCalendar = q('.qx-calendar-previous-month', cal).eq(0);
 
     this.assertTrue(yesterday.hasClass('qx-calendar-past'));
     this.assertTrue(firstDayInCalendar.hasClass('qx-calendar-past'));
@@ -4716,7 +4722,7 @@ testrunner.define({
     cal.setConfig('hideDaysOtherMonth', true);
     cal.render();
 
-    var previousDaysMonth = q('.qx-calendar-othermonth').getChildren().eq(0);
+    var previousDaysMonth = q('.qx-calendar-previous-month').getChildren().eq(0);
     this.assertTrue(previousDaysMonth.hasClass('qx-hidden'));
   },
 
@@ -4725,7 +4731,7 @@ testrunner.define({
     cal.setConfig('disableDaysOtherMonth', true);
     cal.render();
 
-    var previousDaysMonth = q('.qx-calendar-othermonth').getChildren().eq(0);
+    var previousDaysMonth = q('.qx-calendar-previous-month').getChildren().eq(0);
     this.assertTrue(previousDaysMonth.getAttribute('disabled'));
   }
 });

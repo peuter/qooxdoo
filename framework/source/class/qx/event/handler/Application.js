@@ -290,46 +290,59 @@ qx.Class.define("qx.event.handler.Application",
     */
 
     /**
-     * Event listener for native load event
-     *
-     * @signature function()
+     * When qx.globalErrorHandling is enabled the callback will observed
      */
-    _onNativeLoad : qx.event.GlobalError.observeMethod(function()
-    {
+    _onNativeLoad: function () {
+      var callback = qx.core.Environment.select("qx.globalErrorHandling", {
+        "true": qx.event.GlobalError.observeMethod(this.__onNativeLoadHandler),
+        "false": this.__onNativeLoadHandler
+      })
+      callback.apply(this, arguments);
+    },
+
+
+    /**
+     * Event listener for native load event
+     */
+    __onNativeLoadHandler: function () {
       this.__domReady = true;
       this.__fireReady();
-    }),
+    },
+
+
+    /**
+     * When qx.globalErrorHandling is enabled the callback will observed
+     */
+    _onNativeUnload: function () {
+      var callback = qx.core.Environment.select("qx.globalErrorHandling", {
+        "true": qx.event.GlobalError.observeMethod(this.__onNativeUnloadHandler),
+        "false": this.__onNativeUnloadHandler
+      })
+      callback.apply(this, arguments);
+    },
 
 
     /**
      * Event listener for native unload event
-     *
-     * @signature function()
      */
-    _onNativeUnload : qx.event.GlobalError.observeMethod(function()
-    {
-      if (!this.__isUnloaded)
-      {
+    __onNativeUnloadHandler: function () {
+      if (!this.__isUnloaded) {
         this.__isUnloaded = true;
 
-        try
-        {
+        try {
           // Fire user event
           qx.event.Registration.fireEvent(this._window, "shutdown");
         }
-        catch (e)
-        {
+        catch (e) {
           // IE doesn't execute the "finally" block if no "catch" block is present
           throw e;
         }
-        finally
-        {
+        finally {
           // Execute registry shutdown
           qx.core.ObjectRegistry.shutdown();
         }
-
       }
-    })
+    }
 
   },
 
