@@ -119,7 +119,7 @@ qx.Class.define("qx.event.handler.Pointer",
 
       // respect anonymous elements
       while (target && target.getAttribute && target.getAttribute("qxanonymous")) {
-        target = target.parentNode
+        target = target.parentNode;
       }
 
       if (!type) {
@@ -141,7 +141,8 @@ qx.Class.define("qx.event.handler.Pointer",
           [domEvent, target, null, true, true]
         );
 
-        if ((domEvent.getPointerType() !== "mouse" || domEvent.button <= 0) &&
+        if ((domEvent.getPointerType() !== "mouse" ||
+             domEvent.button <= qx.event.handler.PointerCore.LEFT_BUTTON) &&
           (type == "pointerdown" || type == "pointerup" || type == "pointermove" || type == "pointercancel"))
         {
           qx.event.Registration.fireEvent(
