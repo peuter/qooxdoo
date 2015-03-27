@@ -187,6 +187,10 @@ testrunner.define({
     var coll2 = q("h2", q(container1));
     this.assertEquals(1, coll2.length);
     this.assertEquals("inner1", coll2[0].id);
+
+    // empty collection as context
+    var coll3 = q("h2", q());
+    this.assertEquals(0, coll3.length);
   },
 
   testOverrideQxWebPrototypeMethods: function () {
@@ -224,6 +228,20 @@ testrunner.define({
       }
     }, true);
     this.assertEquals("bar", qxWeb(document.body).__attach_test());
+  },
+
+  testIndexOf : function() {
+    this.assertEquals([].indexOf(), qxWeb().indexOf());
+    this.assertEquals([0, 1].indexOf(1),
+      qxWeb([document.documentElement, document.body]).indexOf(document.body));
+    this.assertEquals([0, 1].indexOf(0, 1),
+      qxWeb([document.documentElement, document.body]).indexOf(document.documentElement, 1));
+    this.assertEquals([0].indexOf(0, 5),
+      qxWeb("#sandbox").indexOf(qxWeb("#sandbox")[0], 5));
+    this.assertEquals([0].indexOf(0, -5),
+      qxWeb("#sandbox").indexOf(qxWeb("#sandbox")[0], -5));
+    this.assertEquals([0, 1, 0].indexOf(0, -1),
+      qxWeb([window, document.documentElement, window]).indexOf(window, -1));
   }
 });
 

@@ -467,14 +467,14 @@ build-components:
 	@time for COMPONENT in $(COMPONENTS); do \
 		if [ "$$COMPONENT" = "website" ]; then \
 			( cd component/standalone/$$COMPONENT && $(CMD_NPM) install ) || exit 1; \
-			( cd tool/grunt && $(CMD_NODE) setup.js -n ) || exit 1; \
+			( cd tool/grunt && $(CMD_NODE) setup.js ) || exit 1; \
 			( cd component/standalone/$$COMPONENT && $(CMD_GENERATOR) build ) || exit 1; \
 			( cd component/standalone/$$COMPONENT && $(CMD_GENERATOR) build-min ) || exit 1; \
 			( cd component/standalone/$$COMPONENT && $(CMD_GENERATOR) build-module-all ) || exit 1; \
 			( cd component/standalone/$$COMPONENT && $(CMD_GENERATOR) build-module-all-min ) || exit 1; \
+			( cd component/standalone/$$COMPONENT && $(CMD_GRUNT) sass ) || exit 1; \
 			( cd component/standalone/$$COMPONENT && $(CMD_GRUNT) test ) || exit 1; \
 			( cd component/standalone/$$COMPONENT && $(CMD_GRUNT) api ) || exit 1; \
-			( cd component/standalone/$$COMPONENT && $(CMD_GRUNT) sass ) || exit 1; \
 		elif [ "$$COMPONENT" = "server" ]; then \
 			( cd component/standalone/$$COMPONENT && $(CMD_GENERATOR) build ) || exit 1; \
 			( cd component/standalone/$$COMPONENT && $(CMD_GENERATOR) build-min ) || exit 1; \
