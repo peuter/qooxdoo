@@ -4,8 +4,6 @@
 /build-ios/
 /build-android/
 /build-indigo/
-/inspector/
-/simulator/
 /test/
 /source/script/
 /source/resource/qx/mobile/css/flat.css

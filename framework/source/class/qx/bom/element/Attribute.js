@@ -311,11 +311,16 @@ qx.Bootstrap.define("qx.bom.element.Attribute",
       }
       else
       {
-        if (value === true) {
+        if ((hints.bools[name] || value === null) &&
+          name.indexOf("data-") !== 0)
+        {
+          if (value === true) {
           element.setAttribute(name, name);
-        } else if (value === false || value === null) {
-          element.removeAttribute(name);
-        } else {
+          } else if (value === false || value === null) {
+            element.removeAttribute(name);
+          }
+        }
+        else {
           element.setAttribute(name, value);
         }
       }
@@ -329,7 +334,11 @@ qx.Bootstrap.define("qx.bom.element.Attribute",
      * @param name {String} Name of the attribute
      */
     reset : function(element, name) {
-      this.set(element, name, null);
+      if (name.indexOf("data-") === 0) {
+        element.removeAttribute(name);
+      } else {
+        this.set(element, name, null);
+      }
     }
   }
 });

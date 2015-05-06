@@ -17,7 +17,6 @@
       "distclean",
       "fix",
       "info",
-      "inspector",
       "lint",
       "migration",
       "pretty",
@@ -41,9 +40,6 @@
     "LOCALES"      : [ "en" ],
     "CACHE"        : "${TMPDIR}/qx${QOOXDOO_VERSION}/cache",
     "ROOT"         : ".",
-    "SELENIUM_SERVER" : "localhost",
-    "SELENIUM_PORT" : 4444,
-    "SELENIUM_BROWSER" : "*googlechrome",
     "AUT_HOST" : "",
     "AUT_PATH" : ""
   },

@@ -66,14 +66,6 @@ File Watching
 
 TBD [Watching files or directory trees for changes, and take a predefined action like re-generating an application, compile Less to Css files, or run a documentation generator.]
 
-Application Development
-=======================
-
-Inspector Console
--------------------
-
-The Generator allows the creation of an inspector that can load the actual application and provides various console views to inspect and tweak it. E.g. it exposes the object hierarchy of qooxdoo classes, gives access to each class' properties, etc.
-
 Code Maintenance
 ==================
 
@@ -132,12 +124,6 @@ Unit Tests
 
 An "Application Under Test" can be generated, combining application test classes and classes from qooxdoo's unit testing framework into a runnable application. To control the testing, both command-line as well as browser-based runners are available.
 
-GUI Tests
--------------
-
-qooxdoo supports testing browser applications with Selenium. The generator can generate the necessary client driver scripts from dedicated application and framework classes that can then be run with e.g. Node.js.
-
-
 Internationalization
 =====================
 
@@ -178,7 +164,7 @@ Logging and Reporting
 Dependency Logging
 ---------------------
 
-Dependency relations between classes can be logged in several formats, json, flare, graphviz/dot or formatted text. 
+Dependency relations between classes can be logged in several formats, json, flare, graphviz/dot or formatted text.
 
 Library Classes
 -----------------
