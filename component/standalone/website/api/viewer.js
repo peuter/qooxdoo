@@ -247,10 +247,10 @@ q.ready(function() {
    * @lint ignoreUndefined(q)
    */
   var renderList = function(data) {
-    var keys = data.getKeys();
+    var keys = ViewerDataUtil.sortModuleKeys(Object.keys(data));
     for (var i = 0; i < keys.length; i++) {
       var moduleName = keys[i];
-      var module = data.getModule(moduleName);
+      var module = data[moduleName];
       renderListModule(moduleName, module);
     }
   };
@@ -263,7 +263,7 @@ q.ready(function() {
     var factoryName;
     var ul = q.create("<ul></ul>");
     data["static"].forEach(function(methodAst) {
-      var methodName = Data.getMethodName(methodAst, data.prefix);
+      var methodName = ViewerDataUtil.getMethodName(methodAst, data.prefix);
       var missing = false;
       if (checkMissing !== false) {
         missing = isMethodMissing(methodName, data.classname);
@@ -271,7 +271,7 @@ q.ready(function() {
 
       var deprecated = data.deprecated;
       if (deprecated !== true) {
-        var deprecatedStatus = Data.getByType(methodAst, "deprecated");
+        var deprecatedStatus = ViewerDataUtil.getByType(methodAst, "deprecated");
         if (deprecatedStatus.children.length > 0) {
           deprecated = true;
         }
@@ -288,8 +288,8 @@ q.ready(function() {
     });
 
     data["member"].forEach(function(methodAst) {
-      var methodName = Data.getMethodName(methodAst, data.prefix);
-      var methodIsFactory = Data.isFactory(methodAst, name);
+      var methodName = ViewerDataUtil.getMethodName(methodAst, data.prefix);
+      var methodIsFactory = ViewerDataUtil.isFactory(methodAst, name);
       factoryName = methodIsFactory ? methodName + "()": factoryName;
       if (methodIsFactory) {
         return;
@@ -298,7 +298,7 @@ q.ready(function() {
 
       var deprecated = data.deprecated;
       if (deprecated !== true) {
-        var deprecatedStatus = Data.getByType(methodAst, "deprecated");
+        var deprecatedStatus = ViewerDataUtil.getByType(methodAst, "deprecated");
         if (deprecatedStatus.children.length > 0) {
           deprecated = true;
         }
@@ -408,10 +408,10 @@ q.ready(function() {
    * CONTENT
    */
   renderContent = function(data) {
-    var keys = data.getKeys();
+    var keys = ViewerDataUtil.sortModuleKeys(Object.keys(data));
     for (var i = 0; i < keys.length; i++) {
       var moduleName = keys[i];
-      var module = data.getModule(moduleName);
+      var module = data[moduleName];
       renderModule(keys[i], module);
     }
   };
@@ -450,8 +450,8 @@ q.ready(function() {
     if (data.superClass) {
       var newName = data.superClass.split(".");
       newName = newName[newName.length -1];
-      var ignore = Data.IGNORE_TYPES.indexOf(newName) != -1 ||
-                   Data.MDC_LINKS[data.superClass] !== undefined;
+      var ignore = ViewerDataUtil.IGNORE_TYPES.indexOf(newName) != -1 ||
+                   ViewerDataUtil.MDC_LINKS[data.superClass] !== undefined;
       var link = newName;
       if (newName == "qxWeb") {
         link = "Core";
@@ -504,7 +504,7 @@ q.ready(function() {
       method.deprecated = data.deprecated;
       method.deprecatedMessage = data.deprecatedMessage;
       var methodDoc = renderMethod(method, data.prefix);
-      if (Data.isFactory(method, name)) {
+      if (ViewerDataUtil.isFactory(method, name)) {
         methodDoc.addClass("factory");
         module.append(q.create("<h2>Factory Method</h2>"));
       }
@@ -525,28 +525,28 @@ q.ready(function() {
 
   var renderMethod = function(method, prefix) {
     // add the name
-    var data = {name: Data.getMethodName(method, prefix)};
+    var data = {name: ViewerDataUtil.getMethodName(method, prefix)};
 
     // module
-    data.module = Data.getModuleName(method.attributes.sourceClass);
+    data.module = ViewerDataUtil.getModuleName(method.attributes.sourceClass);
 
     // add the description
     var parent = getItemParent(data.name);
-    data.desc = parse(Data.getByType(method, "desc").attributes.text || "", parent);
+    data.desc = parse(ViewerDataUtil.getByType(method, "desc").attributes.text || "", parent);
 
     // add link to overridden method
     if (data.desc == "" && method.attributes.docFrom) {
-      var moduleName = Data.getModuleNameFromClassName(method.attributes.docFrom);
+      var moduleName = ViewerDataUtil.getModuleNameFromClassName(method.attributes.docFrom);
       var link = q.string.firstLow(moduleName) + "." + method.attributes.name;
       data.desc = "<p>Overrides method <a href='#" + link + "'>" + link + "</a></p>";
     }
 
     // add the return type
-    var returnType = Data.getByType(method, "return");
+    var returnType = ViewerDataUtil.getByType(method, "return");
     if (returnType) {
-      data.returns = {desc: parse(Data.getByType(returnType, "desc").attributes.text || "", parent)};
+      data.returns = {desc: parse(ViewerDataUtil.getByType(returnType, "desc").attributes.text || "", parent)};
       data.returns.types = [];
-      Data.getByType(returnType, "types").children.forEach(function(item) {
+      ViewerDataUtil.getByType(returnType, "types").children.forEach(function(item) {
         var type = item.attributes.type;
         data.returns.types.push(type);
       });
@@ -555,19 +555,19 @@ q.ready(function() {
 
     // add the parameters
     data.params = [];
-    var params = Data.getByType(method, "params");
+    var params = ViewerDataUtil.getByType(method, "params");
     for (var j=0; j < params.children.length; j++) {
       var param = params.children[j];
       var paramData = {
         name: param.attributes.name,
         optional: param.attributes.optional
       };
-      paramData.desc = parse(Data.getByType(param, "desc").attributes.text || "", parent);
+      paramData.desc = parse(ViewerDataUtil.getByType(param, "desc").attributes.text || "", parent);
       if (param.attributes.defaultValue) {
         paramData.defaultValue = param.attributes.defaultValue;
       }
       paramData.types = [];
-      var types = Data.getByType(param, "types");
+      var types = ViewerDataUtil.getByType(param, "types");
       for (var k=0; k < types.children.length; k++) {
         var type = types.children[k];
         var typeString = type.attributes.type;
@@ -595,9 +595,9 @@ q.ready(function() {
     data.deprecatedMessage = method.deprecatedMessage;
 
     if (data.deprecated !== true) {
-      var deprecatedStatus = Data.getByType(method, "deprecated");
+      var deprecatedStatus = ViewerDataUtil.getByType(method, "deprecated");
       if (deprecatedStatus.children.length > 0) {
-        var deprecatedDescription = Data.getByType(deprecatedStatus, "desc");
+        var deprecatedDescription = ViewerDataUtil.getByType(deprecatedStatus, "desc");
         var deprecatedMessage = deprecatedDescription.attributes.text;
         data.deprecated = true;
         data.deprecatedMessage = deprecatedMessage.length > 0 ? deprecatedMessage : '<p>Deprecated</p>';
@@ -692,7 +692,7 @@ q.ready(function() {
     var links;
     var regexp = /\{@link (.*?)\}/g;
     while ((links = regexp.exec(text)) != null) {
-      var name = Data.getModuleName(links[1]);
+      var name = ViewerDataUtil.getModuleName(links[1]);
       text = text.replace(links[0], "<a href='#" + name + "'>" + name + "</a>");
     }
 
@@ -856,16 +856,16 @@ q.ready(function() {
   var addTypeLink = function(type) {
     // special case for pseudo typed arrays
     if (type.indexOf("[]") != -1) {
-      return "<a target='_blank' href='" + Data.MDC_LINKS["Array"] + "'>" + type + "</a>";
+      return "<a target='_blank' href='" + ViewerDataUtil.MDC_LINKS["Array"] + "'>" + type + "</a>";
     }
     if (type == "qxWeb") {
       return "<a href='#Core'>q</a>";
-    } else if (Data.MDC_LINKS[type]) {
-      return "<a target='_blank' href='" + Data.MDC_LINKS[type] + "'>" + type + "</a>";
-    } else if (Data.IGNORE_TYPES.indexOf(type) == -1) {
+    } else if (ViewerDataUtil.MDC_LINKS[type]) {
+      return "<a target='_blank' href='" + ViewerDataUtil.MDC_LINKS[type] + "'>" + type + "</a>";
+    } else if (ViewerDataUtil.IGNORE_TYPES.indexOf(type) == -1) {
       var name = type.split(".");
       name = name[name.length -1];
-      if (Data.IGNORE_TYPES.indexOf(name) == -1) {
+      if (ViewerDataUtil.IGNORE_TYPES.indexOf(name) == -1) {
         return "<a href='#" + name + "'>" + name + "</a>";
       }
     }
@@ -1166,22 +1166,30 @@ q.ready(function() {
     scrollContentIntoView();
   };
 
-  var configReplacements = q.$$qx.core.Environment.get("apiviewer.modulenamereplacements");
-  var replacements = [];
-  for (var exp in configReplacements) {
-    replacements.push({
-      regExp: new RegExp(exp),
-      replacement: configReplacements[exp]
-    });
-  }
+  q.io.xhr("script/viewer-data.json")
+    .on("loadend", function(xhr) {
+      var isFileProtocol = function() {
+        return (location.protocol.indexOf("file") === 0);
+      };
 
-  Data.MODULE_NAME_REPLACEMENTS = replacements;
-  var data = new Data();
-  data.on("ready", onContentReady, data);
-  data.on("loadingFailed", function() {
-    q("#warning").setStyle("display", "block");
-    if (isFileProtocol()) {
-      q("#warning em").setHtml("File protocol not supported. Please load the application via HTTP.");
-    }
-  });
+      if (xhr.readyState == 4 && xhr.status >= 200 && xhr.status < 400) {
+        var viewerData = JSON.parse(xhr.responseText);
+        if (q.env.get("engine.name") == "mshtml" && isFileProtocol()) {
+          // postpone data processing in IE when using file protocol
+          // to prevent rendering no module doc at all
+          window.setTimeout(onContentReady.bind(viewerData)(), 0);
+        } else {
+          onContentReady.bind(viewerData)();
+        }
+      } else {
+        this.emit("loadingFailed");
+      }
+    }, this)
+    .on("loadingFailed", function() {
+      q("#warning").setStyle("display", "block");
+      if (isFileProtocol()) {
+        q("#warning em").setHtml("File protocol not supported. Please load the application via HTTP.");
+      }
+    })
+    .send();
 });

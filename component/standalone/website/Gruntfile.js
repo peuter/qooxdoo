@@ -4,6 +4,8 @@ var qx = require("../../../tool/grunt");
 
 var path = require('path');
 
+var fs = require('fs');
+
 // grunt
 module.exports = function(grunt) {
 
@@ -114,6 +116,16 @@ module.exports = function(grunt) {
           }
         }]
       }
+    },
+
+    babel: {
+      options: { sourceMap: false },
+      dist: {
+        files: {
+          'api/ViewerDataUtil.es5': 'api/ViewerDataUtil.es6',
+          'api/ViewerData.es5': 'api/ViewerData.es6'
+        }
+      }
     }
   };
 
@@ -123,6 +135,7 @@ module.exports = function(grunt) {
 
   qx.task.registerTasks(grunt);
 
+  grunt.loadNpmTasks('grunt-babel');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-watch');
@@ -135,7 +148,7 @@ module.exports = function(grunt) {
   grunt.task.registerTask(
     'api',
     'Concat the samples and generate the API.',
-    ["concat:samples", "generate-api", "sass:indigo", "notify:api"]
+    ["concat:samples", "generate-api", "babel", "write-viewer-data", "sass:indigo", "notify:api"]
   );
 
   // 'extend' test jobs
@@ -143,7 +156,7 @@ module.exports = function(grunt) {
   grunt.task.registerTask(
     'test',
     'Generate the Indigo CSS and the Test Runner (using a minified version of qx.Website).',
-    ["generate-test", "sass:indigo", "notify:test"]
+    ["generate-test", "sass:indigo", "replace:templVarWithMinifiedCss", "notify:test"]
   );
 
   grunt.task.renameTask('test-source', 'generate-test-source');
@@ -157,7 +170,7 @@ module.exports = function(grunt) {
   grunt.task.registerTask(
     'test-module',
     'Generate the Indigo CSS and the Test Runner (using a modular version of qx.Website).',
-    ["generate-test-module", "sass:indigo", "notify:test"]
+    ["generate-test-module", "sass:indigo", "replace:templVarWithMinifiedCss", "notify:test"]
   );
 
   // 'extend' source job
@@ -174,18 +187,6 @@ module.exports = function(grunt) {
     'build',
     'Generate the build version of qx.Website and the widget CSS',
     ["generate:build", "sass:indigo", "notify:build"]
-  );
-
-  grunt.task.registerTask(
-    'test',
-    'Build testrunner',
-    ["generate:test", "replace:templVarWithMinifiedCss"]
-  );
-
-  grunt.task.registerTask(
-    'test-module',
-    'Build testrunner with module files',
-    ["generate:test-module", "replace:templVarWithMinifiedCss"]
   );
 
   // pre-process the index file
@@ -209,5 +210,16 @@ module.exports = function(grunt) {
 
     // write index file
     fs.writeFileSync('api/index.new.html', index, {'encoding': 'utf8'});
+  });
+
+  grunt.registerTask('write-viewer-data', 'Writes viewer data file.', function() {
+    var ViewerData = require('./api/ViewerData.es5');
+    var ast = JSON.parse(fs.readFileSync('api/script/qxWeb.json', {encoding: 'utf8'}));
+    var viewerData = new ViewerData();
+    viewerData.processAst(ast);
+    var rawData = viewerData.getRawData();
+    grunt.log.writeln("Produced JSON for the following modules:");
+    grunt.log.oklns(JSON.stringify(Object.keys(rawData)));
+    fs.writeFileSync('api/script/viewer-data.json', JSON.stringify(rawData), {encoding: 'utf8'});
   });
 };

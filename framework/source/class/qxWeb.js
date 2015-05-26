@@ -58,6 +58,11 @@ qx.Bootstrap.define("qxWeb", {
      * @return {q} A new initialized collection.
      */
     $init : function(arg, clazz) {
+      // restore widget instance
+      if (arg.length && arg.length == 1 && arg[0] && arg[0].$widget instanceof qxWeb) {
+        return arg[0].$widget;
+      }
+
       var clean = [];
       for (var i = 0; i < arg.length; i++) {
         // check for node or window object
@@ -73,7 +78,7 @@ qx.Bootstrap.define("qxWeb", {
         }
       }
 
-      if (arg[0] && arg[0].getAttribute && arg[0].getAttribute("data-qx-class")) {
+      if (arg[0] && arg[0].getAttribute && arg[0].getAttribute("data-qx-class") && clean.length < 2) {
         clazz = qx.Bootstrap.getByName(arg[0].getAttribute("data-qx-class")) || clazz;
       }
 
@@ -121,6 +126,47 @@ qx.Bootstrap.define("qxWeb", {
           }
         }
         qxWeb[name] = module[name];
+      }
+    },
+
+    /**
+     * This is an API for module development and can be used to attach new methods
+     * to {@link q} during runtime according to the following conventions:
+     *
+     * Public members of the module are attached to the collection similar to
+     * <code>qxWeb.$attach</code>. Members beginning with '$' or '_' are ignored.
+     *
+     * Statics of the module are attached to {@link q} similar to
+     * <code>qxWeb.$attachStatic</code>. Statics beginning with '$' or '_', as well as constants
+     * (all upper case) and some qooxdoo-internal statics of the module are ignored.
+     *
+     *
+     * If more fine-grained control outside if these conventions is needed,
+     * simply use <code>qxWeb.$attach</code> or <code>qxWeb$attachStatic</code>.
+     *
+     * @param clazz {Object} the qooxdoo class definition calling this method.
+     * @param staticsNamespace {String?undefined} Specifies the namespace under which statics are attached to {@link q}.
+     */
+    $attachAll : function(clazz, staticsNamespace) {
+      // members
+      for (var name in clazz.members) {
+        if (name.indexOf("$") !== 0 && name.indexOf("_") !== 0)
+        qxWeb.prototype[name] = clazz.members[name];
+      }
+
+      // statics
+      var destination;
+      if (staticsNamespace != null) {
+        qxWeb[staticsNamespace] = qxWeb[staticsNamespace] || {};
+        destination = qxWeb[staticsNamespace];
+      } else {
+        destination = qxWeb;
+      }
+
+      for (var name in clazz.statics) {
+        if (name.indexOf("$") !== 0 && name.indexOf("_") !== 0 && name !== "name" && name !== "basename" &&
+            name !== "classname" && name !== "toString" && name !== name.toUpperCase())
+        destination[name] = clazz.statics[name];
       }
     },
 
