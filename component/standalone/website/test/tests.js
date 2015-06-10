@@ -4095,6 +4095,7 @@ testrunner.define({
   testSpan : function() {
     var coll = q.create('<span>Just some text</span>')
     .appendTo("#sandbox");
+    coll.setStyle("position", "absolute");
     this.__testSelection(coll, "some");
   },
 
@@ -4396,7 +4397,7 @@ testrunner.define({
     var w1 = q.create('<div id="w1" class="wrapped">').widget().appendTo(q("#sandbox"));
 
     var wrapper = q(".wrapped").toWidgetCollection();
-    this.assertInstance(wrapper, qx.core.Wrapper);
+    this.assertInstance(wrapper, qxWeb.$$qx.core.Wrapper);
     this.assertEquals(wrapper.length, 2);
     this.assertEquals(wrapper[0], w0);
     this.assertEquals(wrapper[1], w1);
