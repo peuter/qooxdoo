@@ -746,7 +746,7 @@ qx.Class.define("qx.event.Manager",
         return false;
       }
 
-      if (qx.core.Environment.get("qx.debug"))
+      if (qx.core.Environment.get("qx.debug")) {
         if (target.$$foreignListeners) {
           Object.keys(target.$$foreignListeners).forEach(function(id) {
             target.$$foreignListeners[id].removeListenerTargetById(id);
