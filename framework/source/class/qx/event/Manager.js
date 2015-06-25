@@ -732,7 +732,6 @@ qx.Class.define("qx.event.Manager",
       return false;
     },
 
-
     /**
      * Remove all event listeners, which are attached to the given event target.
      *
@@ -745,6 +744,14 @@ qx.Class.define("qx.event.Manager",
       var targetMap = this.__listeners[targetKey];
       if (!targetMap) {
         return false;
+      }
+
+      if (qx.core.Environment.get("qx.debug"))
+        if (target.$$foreignListeners) {
+          Object.keys(target.$$foreignListeners).forEach(function(id) {
+            target.$$foreignListeners[id].removeListenerTargetById(id);
+          }, this);
+        }
       }
 
       // Deregister from event handlers
