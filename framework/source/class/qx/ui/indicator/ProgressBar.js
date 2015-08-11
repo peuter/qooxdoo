@@ -5,7 +5,7 @@
    http://qooxdoo.org
 
    Copyright:
-     2004-2010 1&1 Internet AG, Germany, http://www.1und1.de
+     2004-2015 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
      LGPL: http://www.gnu.org/licenses/lgpl.html
@@ -46,6 +46,8 @@
  * //set a value
  * pb.setValue(20);
  * </pre>
+ *
+ * @childControl progress {qx.ui.container.Composite} The progress bar
  */
 qx.Class.define("qx.ui.indicator.ProgressBar",
 {
@@ -80,6 +82,22 @@ qx.Class.define("qx.ui.indicator.ProgressBar",
     {
       refine: true,
       init: "progressbar"
+    },
+
+    /** Maximum value of the progress bar */
+    maximum :
+    {
+      init : 100,
+      event : "changeMaximum",
+      apply : "_applyMaximum"
+    },
+
+    /** Current value of the progress bar */
+    value :
+    {
+      init : 0,
+      event : "changeValue",
+      apply : "_applyValue"
     }
   },
 
@@ -101,79 +119,39 @@ qx.Class.define("qx.ui.indicator.ProgressBar",
 
   members:
   {
-    __value: 0,
-    __maximum: 100,
-
-
-    /**
-     * Returns the progress bar value.
-     *
-     * @return {Number} progress bar value.
-     */
-    getValue: function() {
-      return this.__value;
-    },
-
-
-    /**
-     * Sets the value of the progress bar.
-     *
-     * @param value {Number} New value of the progress bar.
-     * @return {Number|null} The unmodified incoming value or <code>null</code>
-     * if the value is invalid.
-     */
-    setValue: function(value) {
+	// property apply
+    _applyValue: function(value, old) {
       var max = this.getMaximum();
 
       //do nothing if is not a number
       if (!qx.lang.Type.isNumber(value) || !isFinite(value)) {
-        return null;
+        value = old;
       }
 
-      // limit value to 0
       if (value < 0) {
+        // limit value to 0
         value = 0;
-      }
-
-      // limit value to max
-      if (value > max) {
+      } else if (value > max) {
+        // limit value to max
         value = max;
       }
 
       //set value
-      this.__value = value;
+      this.setValue(value);
 
       //update progress
       this._changeProgress(value / max);
-
-      return value;
     },
 
 
-    /**
-     * Returns the maximum value of progress bar.
-     *
-     * @return {Number} maximum value of progress bar.
-     */
-    getMaximum: function() {
-      return this.__maximum;
-    },
-
-
-    /**
-     * Sets the maximum value of the progress bar.
-     *
-     * @param value {Number} New maximum value progress bar.
-     * @return {Number|null} The unmodified incoming value or <code>null</code>
-     * if the value is invalid.
-     */
-    setMaximum: function(value) {
+    // property apply
+    _applyMaximum: function(value, old) {
       var max = value;
       var val = this.getValue();
 
       //do nothing if is not a number, is negative or zero
       if (!qx.lang.Type.isNumber(max) || !isFinite(max) || max <= 0) {
-        return null;
+        max = old;
       }
 
       //limit max to a greater than 0 value
@@ -182,12 +160,10 @@ qx.Class.define("qx.ui.indicator.ProgressBar",
       }
 
       //set max
-      this.__maximum = max;
+      this.setMaximum(max);
 
       //update progress
       this._changeProgress(val / max);
-
-      return max;
     },
 
 

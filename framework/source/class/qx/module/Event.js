@@ -387,7 +387,7 @@ qx.Bootstrap.define("qx.module.Event", {
                 storedContext = el.__ctx[id];
               }
               // remove the listener from the emitter
-              el.$$emitter.off(types[i], storedListener, storedContext || context);
+              var result = el.$$emitter.off(types[i], storedListener, storedContext || context);
 
               // check if it's a bound listener which means it was a native event
               if (removeAll || storedListener.original == listener) {
@@ -395,7 +395,11 @@ qx.Bootstrap.define("qx.module.Event", {
                 qx.bom.Event.removeNativeListener(el, types[i], storedListener, useCapture);
               }
 
-              delete el.__listener[types[i]][id];
+              // BUG #9184
+              // only if the emitter was successfully removed also delete the key in the data structure
+              if (result !== null) {
+                delete el.__listener[types[i]][id];
+              }
 
               if (hasStoredContext) {
                 delete el.__ctx[id];
@@ -626,11 +630,19 @@ qx.Bootstrap.define("qx.module.Event", {
 
       context = context !== undefined ? context : this;
 
-      var listener = function(e) {
-        var eventTarget = qxWeb(e.getTarget());
+      var listener = function(e){
 
+        var eventTarget = qxWeb(e.getTarget());
         if (eventTarget.is(target)) {
           callback.call(context, eventTarget, qxWeb.object.clone(e));
+        } else {
+          var targetToMatch = typeof target == "string" ? this.find(target) : qxWeb(target);
+          for(var i = 0, l = targetToMatch.length; i < l; i++) {
+            if(eventTarget.isChildOf(qxWeb(targetToMatch[i]))) {
+              callback.call(context, eventTarget, qxWeb.object.clone(e));
+              break;
+            }
+          }
         }
       };
 
