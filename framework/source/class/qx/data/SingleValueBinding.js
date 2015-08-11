@@ -1172,7 +1172,7 @@ qx.Class.define("qx.data.SingleValueBinding",
         // go threw all added listeners (source)
         for (var i = 0; i < id.sources.length; i++) {
           // check if a source is available
-          if (id.sources[i]) {
+          if (id.sources[i] && id.listenerIds[i] !== undefined) {
             id.sources[i].removeListenerById(id.listenerIds[i]);
           }
         }
