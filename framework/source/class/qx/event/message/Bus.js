@@ -284,6 +284,13 @@ qx.Class.define("qx.event.message.Bus",
 
       for (var key in sub)
       {
+        // This is a workaround for Chrome 42.x that seems to have problems
+        // with iterating over the target keys. Evaluating "hash" seems to
+        // be enough, although it never enters the "continue".
+        if (key === 0) {
+          continue;
+        }
+
         var pos = key.indexOf("*");
 
         if (pos > -1)
