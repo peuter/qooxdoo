@@ -307,7 +307,7 @@ qx.Class.define("qx.data.SingleValueBinding",
         // remove the old sources
         var source = context.sources[j];
         context.sources[j] = null;
-        if (!source) {
+        if (!source || !context.listenerIds[j]) {
           continue;
         }
 
