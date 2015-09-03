@@ -242,7 +242,7 @@ qx.Class.define("qx.event.message.Bus",
     {
        var sub = this.getSubscriptions();
        var subscrList = sub[message];
-       if (subscrList) {
+       if (subscrList && subscrList.length) {
          if (!subscriber) {
            sub[message] = null;
            delete sub[message];
