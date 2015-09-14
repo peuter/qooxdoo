@@ -182,7 +182,8 @@ qx.Bootstrap.define("qx.bom.request.SimpleXhr",
      * @return {qx.bom.request.SimpleXhr} Self for chaining.
      */
     setRequestData: function(data) {
-      if (qx.lang.Type.isString(data) || qx.lang.Type.isObject(data)) {
+      if (qx.lang.Type.isString(data) || qx.lang.Type.isObject(data) ||
+         ["ArrayBuffer", "Blob", "FormData"].indexOf(qx.lang.Type.getClass(data)) !== -1) {
         this.__requestData = data;
       }
       return this;
@@ -397,7 +398,7 @@ qx.Bootstrap.define("qx.bom.request.SimpleXhr",
         this._transport.send();
       } else {
         // POST & PUT ...
-        if (typeof curContentType === "undefined") {
+        if (typeof curContentType === "undefined" && ["ArrayBuffer", "Blob", "FormData"].indexOf(qx.Bootstrap.getClass(serializedData)) === -1) {
           // by default, set content-type urlencoded for requests with body
           this._transport.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         }
@@ -463,6 +464,7 @@ qx.Bootstrap.define("qx.bom.request.SimpleXhr",
       transport.ontimeout = qx.lang.Function.bind(this._onTimeout, this);
       transport.onerror = qx.lang.Function.bind(this._onError, this);
       transport.onabort = qx.lang.Function.bind(this._onAbort, this);
+      transport.onprogress = qx.lang.Function.bind(this._onProgress, this);
       return transport;
     },
 
@@ -509,6 +511,10 @@ qx.Bootstrap.define("qx.bom.request.SimpleXhr",
 
       if (qx.lang.Type.isObject(data)) {
         return qx.util.Uri.toParameter(data, isPost);
+      }
+
+      if (["ArrayBuffer", "Blob", "FormData"].indexOf(qx.Bootstrap.getClass(data)) !== -1) {
+        return data;
       }
 
       return null;
@@ -673,6 +679,13 @@ qx.Bootstrap.define("qx.bom.request.SimpleXhr",
 
       // A network error failure
       this.emit("fail");
+    },
+
+    /**
+     * Handles "error" event.
+     */
+    _onProgress: function() {
+      this.emit("progress");
     }
 
   }

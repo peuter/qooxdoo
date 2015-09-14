@@ -146,7 +146,7 @@ qx.Bootstrap.define("qx.bom.rest.Resource",
     "started": "qx.bom.rest.Resource",
 
     /**
-     * Fired when any request associated to action is started to the given endpoint. This moment is 
+     * Fired when any request associated to action is started to the given endpoint. This moment is
      * right after the request was opened and send.
      *
      * For example, "indexStarted" is fired when <code>index()</code> was called.
@@ -309,6 +309,25 @@ qx.Bootstrap.define("qx.bom.rest.Resource",
                 this.emit(action + "Started", payload);
                 this.emit("started", payload);
               }
+            }
+          },
+          context: this
+        },
+        onprogress: {
+          callback: function(req, action) {
+            return function () {
+              var payload = {
+                "id": parseInt(req.toHashCode(), 10),
+                "request": req,
+                "action": action,
+                "progress": {
+                  "lengthComputable": req.getTransport().progress.lengthComputable,
+                  "loaded": req.getTransport().progress.loaded,
+                  "total": req.getTransport().progress.total
+                }
+              };
+              this.emit(action + "Progress", payload);
+              this.emit("progress", payload);
             }
           },
           context: this
@@ -481,6 +500,14 @@ qx.Bootstrap.define("qx.bom.rest.Resource",
           "readystatechange",
           reqHandler.onreadystatechange.callback(req, action),
           reqHandler.onreadystatechange.context
+        );
+      }
+      // Handle progress (which is fired multiple times)
+      if (reqHandler.hasOwnProperty("onprogress")) {
+        req.addListener(
+          "progress",
+          reqHandler.onprogress.callback(req, action),
+          reqHandler.onprogress.context
         );
       }
 
