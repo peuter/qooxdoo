@@ -238,7 +238,7 @@ qx.Class.define("qx.event.dispatch.MouseCapture",
       "mshtml" : function(element, containerCapture) {
         if (element.setCapture) {
           element.setCapture(containerCapture !== false);
-        } elseif (element.setPointerCapture) {
+        } else if (element.setPointerCapture) {
           element.setPointerCapture(containerCapture !== false);
         }
       },
@@ -259,7 +259,7 @@ qx.Class.define("qx.event.dispatch.MouseCapture",
       "mshtml" : function(element) {
         if (element.releaseCapture) {
           element.releaseCapture();
-        } elseif (element.releasePointerCapture) {
+        } else if (element.releasePointerCapture) {
           element.releasePointerCapture(containerCapture !== false);
         }
       },
