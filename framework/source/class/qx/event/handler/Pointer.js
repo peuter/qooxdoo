@@ -165,7 +165,12 @@ qx.Class.define("qx.event.handler.Pointer",
       }
 
       var type = qx.event.handler.PointerCore.MSPOINTER_TO_POINTER_MAPPING[domEvent.type] || domEvent.type;
-      this._fireEvent(domEvent, type, qx.bom.Event.getTarget(domEvent));
+      var target = qx.bom.Event.getTarget(domEvent);
+      if (qx.core.Environment.get("engine.name") == "mshtml" && target.correspondingElement) {
+        target = target.correspondingElement;
+      }
+
+      this._fireEvent(domEvent, type, target);
     },
 
 
