@@ -310,6 +310,10 @@ qx.Class.define("qx.event.handler.Focus",
     {
       var active = this.__findActivatableElement(element);
       if (active) {
+        if (qx.core.Environment.get("engine.name") == "mshtml" && element instanceof SVGElementInstance) {
+          return;
+        }
+
         this.setActive(active);
       }
     },

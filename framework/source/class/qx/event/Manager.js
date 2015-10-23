@@ -890,6 +890,7 @@ qx.Class.define("qx.event.Manager",
       if (!dispatched)
       {
         if (qx.core.Environment.get("qx.debug")) {
+          debugger;
           qx.log.Logger.error(this, "No dispatcher can handle event of type " + type + " on " + target);
         }
         return true;

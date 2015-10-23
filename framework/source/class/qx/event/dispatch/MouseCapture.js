@@ -236,7 +236,9 @@ qx.Class.define("qx.event.dispatch.MouseCapture",
     nativeSetCapture : qx.core.Environment.select("engine.name",
     {
       "mshtml" : function(element, containerCapture) {
-        element.setCapture(containerCapture !== false);
+        if (element.setCapture) {
+          element.setCapture(containerCapture !== false);
+        }
       },
 
       "default" : (function() {})
@@ -253,7 +255,9 @@ qx.Class.define("qx.event.dispatch.MouseCapture",
     nativeReleaseCapture : qx.core.Environment.select("engine.name",
     {
       "mshtml" : function(element) {
-        element.releaseCapture();
+        if (element.releaseCapture) {
+          element.releaseCapture();
+        }
       },
 
       "default" : (function() {})
