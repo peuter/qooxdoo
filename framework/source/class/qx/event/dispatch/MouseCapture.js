@@ -260,7 +260,7 @@ qx.Class.define("qx.event.dispatch.MouseCapture",
         if (element.releaseCapture) {
           element.releaseCapture();
         } else if (element.releasePointerCapture) {
-          element.releasePointerCapture(containerCapture !== false);
+          element.releasePointerCapture();
         }
       },
 
