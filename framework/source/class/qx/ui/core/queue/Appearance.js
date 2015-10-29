@@ -87,13 +87,6 @@ qx.Class.define("qx.ui.core.queue.Appearance",
       {
         // Order is important to allow the same widget to be re-queued directly
         obj = queue[i];
-
-        // Fix an issue where the length of the queue changes while we're in
-        // this loop. We've it sometimes when changes are triggered by XMPP events.
-        if (!obj) {
-          continue;
-        }
-
         queue.splice(i, 1);
 
         // Only apply to currently visible widgets
