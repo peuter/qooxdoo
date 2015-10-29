@@ -177,13 +177,6 @@ qx.Class.define("qx.event.handler.Appear",
 
       for (var hash in targets)
       {
-        // This is a workaround for Chrome 42.x that seems to have problems
-        // with iterating over the target keys. Evaluating "hash" seems to
-        // be enough, although it never enters the "continue".
-        if (hash == 0) {
-          continue;
-        }
-
         elem = targets[hash];
 
         var displayed = elem.offsetWidth > 0;
