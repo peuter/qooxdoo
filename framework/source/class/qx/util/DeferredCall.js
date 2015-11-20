@@ -91,7 +91,7 @@ qx.Class.define("qx.util.DeferredCall",
         // warn if the context is disposed
         var context = this.__context;
         if (context && context.isDisposed && context.isDisposed()) {
-          qx.log.Logger.warn(
+          this.warn(
             "The context object '" + context + "' of the defered call '" +
             this + "'is already disposed."
           );
