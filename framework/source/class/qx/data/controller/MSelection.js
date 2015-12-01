@@ -167,7 +167,7 @@ qx.Mixin.define("qx.data.controller.MSelection",
       // get both selections
       var targetSelection = this.getTarget().getSelection();
       var selection = this.getSelection();
-      if (selection == null) {
+      if (selection == null || (selection.isDisposed && selection.isDisposed())) {
         selection = new qx.data.Array();
         this.__ownSelection = selection;
         this.setSelection(selection);
