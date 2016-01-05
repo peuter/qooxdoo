@@ -95,7 +95,6 @@ qx.Class.define("qx.util.DeferredCall",
             "The context object '" + context + "' of the defered call '" +
             this + "'is already disposed."
           );
-          return;
         }
       }
 
