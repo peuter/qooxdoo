@@ -208,10 +208,10 @@ qx.Bootstrap.define("qx.event.handler.PointerCore", {
         // Firing pointer cancel for previously active touches.
         for (var i = this.__activeTouches.length - 1; i >= 0; i--) {
           var cancelEvent = new qx.event.type.dom.Pointer("pointercancel", domEvent, {
-            identifier: this.__activeTouches[i].identifier,
+            identifier: qx.core.Environment.get("os.name") === "ios" ? changedTouches[0].identifier : this.__activeTouches[i].identifier,
             target: domEvent.target,
             pointerType: "touch",
-            pointerId: this.__activeTouches[i].identifier + 2
+            pointerId: (qx.core.Environment.get("os.name") === "ios" ? changedTouches[0].identifier : this.__activeTouches[i].identifier) + 2
           });
 
           this._fireEvent(cancelEvent, "pointercancel", domEvent.target);
