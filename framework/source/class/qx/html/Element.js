@@ -333,7 +333,7 @@ qx.Class.define("qx.html.Element",
         "releaseCapture": 1,
         "blur": 1,
         "deactivate": 1
-      }
+      };
 
       // Process action list
       for (var i=0; i<this._actions.length; i++)
@@ -671,7 +671,7 @@ qx.Class.define("qx.html.Element",
             }
 
             if (qx.core.Environment.get("qx.debug")) {
-              domOperations++
+              domOperations++;
             }
           }
 
@@ -809,7 +809,7 @@ qx.Class.define("qx.html.Element",
         {
           var styles = {};
           for (var key in jobs) {
-            styles[key] = data[key]
+            styles[key] = data[key];
           }
 
           Style.setStyles(elem, styles);
@@ -1565,7 +1565,10 @@ qx.Class.define("qx.html.Element",
         col.push(this.__element);
       }
       if (this.__element) {
-        col.fadeIn(duration);
+        col.fadeIn(duration).once("animationEnd", function() {
+          this.show();
+          qx.html.Element.flush();
+        }, this);
         return col.getAnimationHandles()[0];
       }
     },
@@ -2547,7 +2550,7 @@ qx.Class.define("qx.html.Element",
         this.assertFunction(listener, msg + "Invalid callback function");
 
         if (self !== undefined) {
-          this.assertObject(self, "Invalid context for callback.")
+          this.assertObject(self, "Invalid context for callback.");
         }
 
         if (capture !== undefined) {
@@ -2607,7 +2610,7 @@ qx.Class.define("qx.html.Element",
         this.assertFunction(listener, msg + "Invalid callback function");
 
         if (self !== undefined) {
-          this.assertObject(self, "Invalid context for callback.")
+          this.assertObject(self, "Invalid context for callback.");
         }
 
         if (capture !== undefined) {

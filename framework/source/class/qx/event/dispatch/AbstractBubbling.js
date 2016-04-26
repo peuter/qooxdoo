@@ -156,7 +156,7 @@ qx.Class.define("qx.event.dispatch.AbstractBubbling",
       event.setEventPhase(qx.event.type.Event.CAPTURING_PHASE);
       for (var i=captureList.length-1; i>=0; i--)
       {
-        currentTarget = captureTargets[i]
+        currentTarget = captureTargets[i];
         event.setCurrentTarget(currentTarget);
 
         localList = captureList[i];
@@ -174,8 +174,9 @@ qx.Class.define("qx.event.dispatch.AbstractBubbling",
               );
             }
           }
-
-          listener.handler.call(context, event);
+          if (!this._manager.isBlacklisted(listener.unique)) {
+            listener.handler.call(context, event);
+          }
         }
 
         if (event.getPropagationStopped()) {

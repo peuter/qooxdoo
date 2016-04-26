@@ -53,6 +53,10 @@ qx.Class.define("qx.test.util.DateFormat",
 
   ],
 
+    tearDown : function() {
+      qx.locale.Manager.getInstance().resetLocale();
+    },
+
     __fillNumber : function(number, minSize)
     {
       var str = "" + number;
@@ -132,6 +136,8 @@ qx.Class.define("qx.test.util.DateFormat",
           parsedDate;
 
       dateFormat = new qx.util.format.DateFormat("EEEE d MMMM yyyy ww");
+
+      qx.locale.Manager.getInstance().setLocale("en_US");
 
       testDate = (new Date(2014, 0, 1)).getTime();
       parsedDate = dateFormat.parse("Wednesday 1 January 2014 01");
@@ -803,9 +809,13 @@ qx.Class.define("qx.test.util.DateFormat",
   testChangingLocales : function()
   {
     var manager = qx.locale.Manager.getInstance();
+    manager.resetLocale();
+    var initialLocale = manager.getLocale();
+
     manager.setLocale('en_US');
 
     var df = new qx.util.format.DateFormat("EEEE yyyy-mm-dd");
+    var dfinitial = new qx.util.format.DateFormat("EEEE yyyy-mm-dd", initialLocale);
     var dfFR = new qx.util.format.DateFormat("EEEE yyyy-mm-dd","fr_FR");
     var dfDE = new qx.util.format.DateFormat("EEEE yyyy-mm-dd","de_DE");
     var dfUS = new qx.util.format.DateFormat("EEEE yyyy-mm-dd","en_US");
@@ -821,7 +831,7 @@ qx.Class.define("qx.test.util.DateFormat",
     this.assertEquals(df.format(d),dfDE.format(d));
 
     manager.resetLocale();
-    this.assertEquals(df.format(d),dfUS.format(d));
+    this.assertEquals(df.format(d),dfinitial.format(d));
 
     manager.setLocale('fr_FR');
     this.assertEquals(df.format(d),dfFR.format(d));
@@ -835,6 +845,7 @@ qx.Class.define("qx.test.util.DateFormat",
     dfFR.resetLocale();
 
     df.dispose();
+    dfinitial.dispose();
     dfFR.dispose();
     dfDE.dispose();
     dfUS.dispose();

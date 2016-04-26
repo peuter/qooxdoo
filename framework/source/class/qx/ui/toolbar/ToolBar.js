@@ -136,7 +136,7 @@ qx.Class.define("qx.ui.toolbar.ToolBar",
     /** Fired if an item will be hidden by the {@link #overflowHandling}.*/
     "hideItem" : "qx.event.type.Data",
 
-    /** Fired if an item will be show by the {@link #overflowHandling}.*/
+    /** Fired if an item will be shown by the {@link #overflowHandling}.*/
     "showItem" : "qx.event.type.Data"
   },
 
@@ -314,7 +314,7 @@ qx.Class.define("qx.ui.toolbar.ToolBar",
     {
       child.setVisibility("visible");
       this.__removedItems.shift();
-      this.fireDataEvent("showItem", child)
+      this.fireDataEvent("showItem", child);
     },
 
 
@@ -357,7 +357,7 @@ qx.Class.define("qx.ui.toolbar.ToolBar",
       // if there is non found by priority, check all available widgets
       var children = this._getChildren();
       for (var i = children.length -1; i >= 0; i--) {
-        var child = children[i]
+        var child = children[i];
         // ignore the overflow widget
         if (child == this.getOverflowIndicator()) {
           continue;
@@ -402,7 +402,7 @@ qx.Class.define("qx.ui.toolbar.ToolBar",
       }
 
       // recalculate if possible
-      var bounds = this.getBounds()
+      var bounds = this.getBounds();
       if (bounds && bounds.width) {
         this._recalculateOverflow(bounds.width);
       }
@@ -466,7 +466,7 @@ qx.Class.define("qx.ui.toolbar.ToolBar",
      *    <code>false</code> otherwise.
      */
     _setAllowMenuOpenHover : function(value) {
-      this.__allowMenuOpenHover = value
+      this.__allowMenuOpenHover = value;
     },
 
     /**

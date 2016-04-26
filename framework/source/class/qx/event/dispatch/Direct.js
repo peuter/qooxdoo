@@ -123,7 +123,7 @@ qx.Class.define("qx.event.dispatch.Direct",
 
           if (qx.core.Environment.get("qx.debug")) {
             // warn if the context is disposed
-            if (context && context.isDisposed && context.isDisposed()) {
+            if (context && context.isDisposed && context.isDisposed() && !context.isDisposing()) {
               this.warn(
                 "The context object '" + context + "' for the event '" +
                 type + "' of '" + target + "'is already disposed."
@@ -131,7 +131,9 @@ qx.Class.define("qx.event.dispatch.Direct",
             }
           }
 
-          listeners[i].handler.call(context, event);
+          if (!this._manager.isBlacklisted(listeners[i].unique)) {
+            listeners[i].handler.call(context, event);
+          }
         }
       }
     }

@@ -183,7 +183,7 @@ qx.Class.define("qx.ui.layout.Grid",
           "column" : 1,
           "rowSpan" : 1,
           "colSpan" : 1
-        }
+        };
         this.assert(layoutProperties[name] == 1, "The property '"+name+"' is not supported by the Grid layout!");
         this.assertInteger(value);
         this.assert(value >= 0, "Value must be positive");
@@ -523,7 +523,7 @@ qx.Class.define("qx.ui.layout.Grid",
         var widgetProps = {
           vAlign : widget.getAlignY(),
           hAlign : widget.getAlignX()
-        }
+        };
       }
       else
       {
@@ -553,7 +553,7 @@ qx.Class.define("qx.ui.layout.Grid",
       return {
         vAlign : vAlign,
         hAlign : hAlign
-      }
+      };
     },
 
 
@@ -611,7 +611,7 @@ qx.Class.define("qx.ui.layout.Grid",
     getRowFlex : function(row)
     {
       var rowData = this.__rowData[row] || {};
-      var rowFlex = rowData.flex !== undefined ? rowData.flex : 0
+      var rowFlex = rowData.flex !== undefined ? rowData.flex : 0;
       return rowFlex;
     },
 
@@ -809,7 +809,7 @@ qx.Class.define("qx.ui.layout.Grid",
         minWidth: hint.minWidth + hMargins,
         maxHeight: hint.maxHeight + vMargins,
         maxWidth: hint.maxWidth + hMargins
-      }
+      };
 
       return outerSize;
     },
@@ -1138,11 +1138,7 @@ qx.Class.define("qx.ui.layout.Grid",
 
           var cellSize = this.__getOuterSize(widget);
 
-          if (this.getColumnFlex(col) > 0) {
-            minWidth = Math.max(minWidth, cellSize.minWidth);
-          } else {
-            minWidth = Math.max(minWidth, cellSize.width);
-          }
+          minWidth = Math.max(minWidth, cellSize.minWidth);
 
           width = Math.max(width, cellSize.width);
         }

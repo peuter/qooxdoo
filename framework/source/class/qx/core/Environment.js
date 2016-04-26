@@ -329,10 +329,14 @@
  *       <td>event.mouseevent</td><td><i>Boolean</i></td><td><code>true</code></td>
  *       <td>{@link qx.bom.client.Event#getMouseEvent}</td>
  *     </tr>
-*     <tr>
-*       <td>event.mousewheel</td><td><i>Map</i></td><td><code>{type: "wheel", target: window}</code></td>
-*       <td>{@link qx.bom.client.Event#getMouseWheel}</td>
-*     </tr>
+ *     <tr>
+ *       <td>event.mousecreateevent</td><td><i>String</i></td><td><code>UIEvents</code></td>
+ *       <td>{@link qx.bom.client.Event#getMouseCreateEvent}</td>
+ *     </tr>
+ *     <tr>
+ *       <td>event.mousewheel</td><td><i>Map</i></td><td><code>{type: "wheel", target: window}</code></td>
+ *       <td>{@link qx.bom.client.Event#getMouseWheel}</td>
+ *     </tr>
  *
  *     <tr>
  *       <td colspan="4"><b>html</b></td>
@@ -555,6 +559,10 @@
  *       <td>locale.variant</td><td><i>String</i></td><td><code>de</code></td>
  *       <td>{@link qx.bom.client.Locale#getVariant}</td>
  *     </tr>
+ *     <tr>
+ *       <td>locale.default</td><td><i>String</i></td><td><code>C</code></td>
+ *       <td>default locale C as in good tradition of unix</td>
+ *     </tr>
 
  *     <tr>
  *       <td colspan="4"><b>os</b></td>
@@ -723,7 +731,7 @@
  *     </tr>
  *     <tr>
  *       <td>qx.globalErrorHandling</td><td><i>Boolean</i></td><td><code>true</code></td>
- *       <td><i>default:</i> <code>true</code></td>
+ *       <td><i>default:</i> <code>true</code> {@link qx.event.GlobalError}</td>
  *     </tr>
  *     <tr>
  *       <td>qx.mobile.nativescroll</td><td><i>Boolean</i></td><td><code>false</code></td>
@@ -1010,7 +1018,7 @@ qx.Bootstrap.define("qx.core.Environment",
     selectAsync : function(key, values, self) {
       this.getAsync(key, function(result) {
         var value = this.__pickFromValues(key, values);
-        value.call(self, result)
+        value.call(self, result);
       }, this);
     },
 

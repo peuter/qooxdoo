@@ -10,7 +10,7 @@
    License:
      LGPL: http://www.gnu.org/licenses/lgpl.html
      EPL: http://www.eclipse.org/org/documents/epl-v10.php
-     See the LICENSE file in the project's left-level directory for details.
+     See the LICENSE file in the project's top-level directory for details.
 
    Authors:
      * Sebastian Werner (wpbasti)
@@ -261,7 +261,7 @@ qx.Class.define("qx.ui.layout.VBox",
         this.__flexs = flexs;
       }
 
-      this.__enableFlex = enableFlex
+      this.__enableFlex = enableFlex;
       this.__children = children;
 
       // Clear invalidation marker

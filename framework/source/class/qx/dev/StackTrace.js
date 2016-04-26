@@ -147,8 +147,19 @@ qx.Bootstrap.define("qx.dev.StackTrace",
      */
     getStackTraceFromCaller : function(args)
     {
+      var isStrictMode = function () {
+        return (typeof this == 'undefined');
+      };
+
       var trace = [];
-      var fcn = qx.lang.Function.getCaller(args);
+      var fcn = null;
+      if (!isStrictMode()) {
+        try {
+          fcn = qx.lang.Function.getCaller(args);
+        }catch(ex) {
+          // Nothing
+        }
+      }
       var knownFunction = {};
       while (fcn)
       {
@@ -238,8 +249,8 @@ qx.Bootstrap.define("qx.dev.StackTrace",
          * at fileUrl:line:char
          */
         lineRe = /at (.*)/gm;
-        var fileReParens = /\((.*?)(:[^\/].*)\)/;
-        var fileRe = /(.*?)(:[^\/].*)/;
+        var fileReParens = /\((.*?)(:[\d:]+)\)/;
+        var fileRe = /(.*?)(:[\d:]+$)/;
         while ((hit = lineRe.exec(error.stack)) != null) {
           var fileMatch = fileReParens.exec(hit[1]);
           if (!fileMatch) {

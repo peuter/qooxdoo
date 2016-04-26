@@ -41,6 +41,8 @@ qx.Class.define("qx.test.ui.command.Command",
 
       this.__menuButton = new qx.ui.menu.Button("c");
       this.__menuButton.setCommand(this.__cmd);
+
+      qx.locale.Manager.getInstance().setLocale("en");
     },
 
 
@@ -50,6 +52,8 @@ qx.Class.define("qx.test.ui.command.Command",
       this.__button.destroy();
       this.__toolbarButton.destroy();
       this.__menuButton.destroy();
+
+      qx.locale.Manager.getInstance().resetLocale();
     },
 
 
@@ -259,7 +263,7 @@ qx.Class.define("qx.test.ui.command.Command",
 
     testDestructExecutable : function() {
       // Create the command
-      var cmd = new qx.ui.command.Command("Meta+T")
+      var cmd = new qx.ui.command.Command("Meta+T");
 
       // Create a button linked to cmd
       var button = new qx.ui.form.Button("Command button", null,cmd);

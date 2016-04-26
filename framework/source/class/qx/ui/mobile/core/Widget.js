@@ -446,7 +446,7 @@ qx.Class.define("qx.ui.mobile.core.Widget",
      */
     getCurrentId : function()
     {
-      return qx.ui.mobile.core.Widget.__idCounter
+      return qx.ui.mobile.core.Widget.__idCounter;
     },
 
 
@@ -560,7 +560,7 @@ qx.Class.define("qx.ui.mobile.core.Widget",
       qx.ui.mobile.core.Widget.ATTRIBUTE_MAPPING[property] = {
         attribute : attribute,
         values : values
-      }
+      };
     },
 
 
@@ -597,7 +597,7 @@ qx.Class.define("qx.ui.mobile.core.Widget",
       qx.ui.mobile.core.Widget.STYLE_MAPPING[property] = {
         style : style,
         values : values
-      }
+      };
     },
 
 
@@ -789,7 +789,7 @@ qx.Class.define("qx.ui.mobile.core.Widget",
       if (qx.core.Environment.get("qx.debug"))
       {
         if (child.getLayoutParent() === this) {
-          throw new Error("The widget is already added this widget. Please remove it first.")
+          throw new Error("The widget is already added this widget. Please remove it first.");
         }
       }
 
@@ -806,7 +806,9 @@ qx.Class.define("qx.ui.mobile.core.Widget",
      * Add a child widget at the specified index
      *
      * @param child {Widget} widget to add
-     * @param index {Integer} Index, at which the widget will be inserted
+     * @param index {Integer} Index, at which the widget will be inserted. If no
+     *   widget exists at the given index, the new widget gets appended to the
+     *   current list of children.
      * @param options {Map?null} Optional layout data for widget.
      */
     _addAt : function(child, index, options)
@@ -838,7 +840,7 @@ qx.Class.define("qx.ui.mobile.core.Widget",
       if (qx.core.Environment.get("qx.debug"))
       {
         if (child.getLayoutParent() === this) {
-          throw new Error("The widget is already added this widget. Please remove it first.")
+          throw new Error("The widget is already added this widget. Please remove it first.");
         }
 
         this.assertInArray(beforeWidget, this._getChildren(), "The 'before' widget is not a child of this widget!");
@@ -869,7 +871,7 @@ qx.Class.define("qx.ui.mobile.core.Widget",
       if (qx.core.Environment.get("qx.debug"))
       {
         if (child.getLayoutParent() === this) {
-          throw new Error("The child is already added to this widget. Please remove it first.")
+          throw new Error("The child is already added to this widget. Please remove it first.");
         }
 
         this.assertInArray(afterWidget, this._getChildren(), "The 'after' widget is not a child of this widget!");
@@ -1233,7 +1235,7 @@ qx.Class.define("qx.ui.mobile.core.Widget",
      */
     _setAttribute : function(attribute, value)
     {
-      var mapping = qx.ui.mobile.core.Widget.ATTRIBUTE_MAPPING[attribute]
+      var mapping = qx.ui.mobile.core.Widget.ATTRIBUTE_MAPPING[attribute];
       if (mapping)
       {
         attribute = mapping.attribute || attribute;
@@ -1295,7 +1297,7 @@ qx.Class.define("qx.ui.mobile.core.Widget",
      */
     _setStyle : function(style, value)
     {
-      var mapping = qx.ui.mobile.core.Widget.STYLE_MAPPING[style]
+      var mapping = qx.ui.mobile.core.Widget.STYLE_MAPPING[style];
       if (mapping)
       {
         style = mapping.style || style;

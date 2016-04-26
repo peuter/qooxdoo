@@ -76,14 +76,13 @@ qx.Bootstrap.define("qx.util.Function", {
               window.clearInterval(this.intervalId);
               delete this.intervalId;
 
-              if (context && context.isDisposed && context.isDisposed()) {
-                qx.log.Logger.warn(
-                  "The context object '" + context + "' of the debounced call '" +
-                  this + "'is already disposed."
-                );
-              }
-              else {
-                if (this.immediate === false) {
+              if (this.immediate === false) {
+                if (context && context.isDisposed && context.isDisposed()) {
+                  qx.log.Logger.warn(
+                    "The context object '" + context + "' of the debounced call '" +
+                    this + "'is already disposed.");
+                }
+                else {
                   callback.apply(context, this.args);
                 }
               }
