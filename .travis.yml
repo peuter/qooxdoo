@@ -3,12 +3,15 @@ language: php
 php:
   - "5.6"
 env:
-  - QXBROWSER=Firefox QXVERSION=latest
-  - QXBROWSER=Firefox QXVERSION=esr-latest
-  - QXBROWSER=Firefox QXVERSION=beta-latest
-  - QXBROWSER=Chrome_travis_ci QXVERSION=stable
-  - QXBROWSER=Chrome_travis_ci QXVERSION=beta
-  - QXBROWSER=Chrome_travis_ci QXVERSION=unstable
+  global:
+    - COVERALLS_PARALLEL=true
+  matrix:
+    - QXBROWSER=Firefox QXVERSION=latest
+    - QXBROWSER=Firefox QXVERSION=esr-latest
+    - QXBROWSER=Firefox QXVERSION=beta-latest
+    - QXBROWSER=Chrome_travis_ci QXVERSION=stable
+    - QXBROWSER=Chrome_travis_ci QXVERSION=beta
+    - QXBROWSER=Chrome_travis_ci QXVERSION=unstable
 
 cache:
   directories:
@@ -28,6 +31,8 @@ before_script:
   - "php -S 0.0.0.0:31323 &> /dev/null &"
   - sleep 3
 script:
-  - ./.travis-test.sh 
+  - ./.travis-test.sh
 after_script:
   - "pkill -f 'php -S 0.0.0.0:31323' &> /dev/null"
+notifications:
+  webhooks: https://coveralls.io/webhook?repo_token=X0oE5TlL62KHjM4wuHlgWp1puz21zncPZ
