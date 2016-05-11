@@ -333,7 +333,7 @@ class LintChecker(treeutil.NodeVisitor):
                     if val.children[0].type == 'function':
                         function_privs = self.function_uses_local_privs(val.children[0])
                         for priv, node in function_privs:
-                            if priv not in private_keys and self.file_name != "bj.core.MContextDisposal":
+                            if priv not in private_keys:
                                 issue = warn("Using an undeclared private class feature: '%s'" % priv, self.file_name, node)
                                 self.issues.append(issue)
 
