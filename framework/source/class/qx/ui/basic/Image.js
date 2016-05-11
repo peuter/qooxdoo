@@ -462,11 +462,12 @@ qx.Class.define("qx.ui.basic.Image",
       var contentEl = this.__getContentElement();
 
       // Detect if the image registry knows this image
-      if (qx.util.ResourceManager.getInstance().has(source)) {
+      var resourceManager = qx.util.ResourceManager.getInstance();
+      if (resourceManager.has(source)) {
         var highResolutionSource = this._findHighResolutionSource(source);
         if (highResolutionSource) {
-          var imageWidth = ResourceManager.getImageHeight(source);
-          var imageHeight = ResourceManager.getImageWidth(source);
+          var imageWidth = resourceManager.getImageHeight(source);
+          var imageHeight = resourceManager.getImageWidth(source);
           this.setWidth(imageWidth);
           this.setHeight(imageHeight);
 
