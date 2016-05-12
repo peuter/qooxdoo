@@ -33,7 +33,6 @@
  * * TabIndex < 0 means that the element, even if naturally possible, is not focusable.
  *
  * @use(qx.event.dispatch.DomBubbling)
- * @ignore(SVGElementInstance)
  */
 qx.Class.define("qx.event.handler.Focus",
 {

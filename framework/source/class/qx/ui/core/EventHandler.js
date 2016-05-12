@@ -294,7 +294,7 @@ qx.Class.define("qx.ui.core.EventHandler",
 
       // Keep original target of DOM event, otherwise map it to the original
       var orig = domEvent.getOriginalTarget();
-      if (orig && orig instanceof qx.ui.core.Widget)
+      if (orig)
       {
         var widgetOriginalTarget = qx.ui.core.Widget.getWidgetByElement(orig);
         while (widgetOriginalTarget && widgetOriginalTarget.isAnonymous()) {
