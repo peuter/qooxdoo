@@ -297,11 +297,16 @@ qx.Class.define("qx.ui.core.EventHandler",
       if (orig)
       {
         var widgetOriginalTarget = qx.ui.core.Widget.getWidgetByElement(orig);
-        while (widgetOriginalTarget && widgetOriginalTarget.isAnonymous()) {
-          widgetOriginalTarget = widgetOriginalTarget.getLayoutParent();
-        }
+        if (widgetOriginalTarget instanceof qx.ui.core.Widget) {
+          while (widgetOriginalTarget && widgetOriginalTarget.isAnonymous()) {
+            widgetOriginalTarget = widgetOriginalTarget.getLayoutParent();
+          }
 
-        widgetEvent.setOriginalTarget(widgetOriginalTarget);
+          widgetEvent.setOriginalTarget(widgetOriginalTarget);
+        }
+        else {
+          widgetEvent.setOriginalTarget(domTarget);
+        }
       }
       else
       {
