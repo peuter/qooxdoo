@@ -154,8 +154,6 @@ qx.Class.define("qx.bom.webfonts.Manager", {
         sources.push(src);
       }
 
-version = "1.0";
-
       // old IEs need a break in between adding @font-face rules
       if (qx.core.Environment.get("engine.name") == "mshtml" && (
           parseInt(qx.core.Environment.get("engine.version")) < 9 ||

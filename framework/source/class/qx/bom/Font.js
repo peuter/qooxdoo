@@ -227,7 +227,7 @@ qx.Class.define("qx.bom.Font",
     version :
     {
       check : function(value) {
-        return value === null || (value instanceof String && /^[a-zA-Z0-9.-]+$/.test(value));
+        return value === null || (typeof value === "string" && /^[a-zA-Z0-9.-]+$/.test(value));
       },
       init : null,
       nullable : true
