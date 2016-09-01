@@ -161,6 +161,30 @@ qx.Class.define("qx.test.bom.webfonts.Manager", {
       }, 2000);
 
       this.wait(3000);
+    },
+
+    "test: load webfont whith custom version" : function()
+    {
+      qx.bom.webfonts.Manager.VALIDATION_TIMEOUT = 100;
+      var font = new qx.bom.webfonts.WebFont();
+      font.set({
+        family: ["fontawesome"],
+        version : "1.0",
+        sources: [this.__fontDefinitions.fontawesome]
+      });
+
+      var that = this;
+      window.setTimeout(function() {
+        that.resume(function() {
+          var foundRule = this.__findRule(this.__fontDefinitions.fontawesome.family);
+console.log(foundRule);
+//TODO: check for ?1.0 in URL
+          this.assertTrue(foundRule, "@font-face rule for custom version not found in document styles!");
+        }, that);
+
+      }, 2000);
+
+      this.wait(3000);
     }
   }
 });
