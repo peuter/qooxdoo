@@ -8,8 +8,7 @@
      2007-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -23,6 +22,9 @@
  * the browser. The wrapped function will at most be called once after the control
  * has been given back to the browser, independent of the number of {@link #call}
  * calls.
+ * 
+ * This class does not need to be disposed, although doing so will cancel any
+ * pending call
  *
  * @require(qx.util.DeferredCallManager)
  */

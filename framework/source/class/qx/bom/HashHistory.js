@@ -8,8 +8,7 @@
      2004-2012 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -25,11 +24,14 @@
  * content on history actions even just hash value changed. This
  * implementation forwards history states (hashes) to a helper iframe.
  *
+ * This class must be disposed of after use
+ *
  * @internal
  */
 qx.Class.define("qx.bom.HashHistory",
 {
   extend : qx.bom.History,
+  implement: [ qx.core.IDisposable ],
 
   construct : function()
   {

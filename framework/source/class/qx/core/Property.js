@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -117,6 +116,32 @@
  *   </td></tr>
  *   <tr><th>deferredInit</th><td>Boolean</td><td>
  *     Allow for a deferred initialization for reference types. Defaults to false.
+ *   </td></tr>
+ *   <tr><th>isEqual</th><td>Function, String</td><td>
+ *     On setting of the property value the method of the specified name will
+ *     be called to test if two values are equal. These checks for equality are
+ *     performed by the Property-System to decide whether further actions (like
+ *     e.g. calling applier methods or firing of events) are needed.
+ *     The signature of the method is <code>function(valueA, valueB)</code>.
+ *     <br/>
+ *     The <i>isEqual</i>-value can be:
+ *     <ul>
+ *       <li>a custom check function.
+ *           The function takes two values as parameter and must return a
+ *           boolean value to indicate whether the values are considered
+ *           equal e.g. <code>function (a, b) { return Object.is(a, b); }</code>.</li>
+ *       <li>inline check code as a string
+ *           which will be invoked with two parameters <code>a</code> and
+ *           <code>b</code> and results in a boolean value to indicate whether
+ *           the values are equal e.g. <code>"a.length() == b.length()"</code>.</li>
+ *       <li>reference to a member method as string
+ *           <code>"<i>methodname</i>"</code> which will be invoked with two
+ *           parameters and returns a boolean value indicating whether the two
+ *           values are considered equal for example <code>"__areTheSame"</code>.</li>
+ *     </ul>
+ *     The default implementation (if this key is undefined) will check the
+ *     equality by using the <i>identity</i> operator (===) as if defined like
+ *     <code>"a===b"</code>.
  *   </td></tr>
  * </table>
  *
@@ -260,6 +285,7 @@ qx.Bootstrap.define("qx.core.Property",
      */
     $$allowedKeys :
     {
+      "@"          : "object",   // Anything
       name         : "string",   // String
       dereference  : "boolean",  // Boolean
       inheritable  : "boolean",  // Boolean
@@ -272,7 +298,8 @@ qx.Bootstrap.define("qx.core.Property",
       check        : null,       // Array, String, Function
       transform    : "string",   // String
       deferredInit : "boolean",  // Boolean
-      validate     : null        // String, Function
+      validate     : null,       // String, Function
+      isEqual      : null        // String, Function
     },
 
 
@@ -283,6 +310,7 @@ qx.Bootstrap.define("qx.core.Property",
      */
     $$allowedGroupKeys :
     {
+      "@"       : "object",   // Anything
       name      : "string",   // String
       group     : "object",   // Array
       mode      : "string",   // String
@@ -541,15 +569,24 @@ qx.Bootstrap.define("qx.core.Property",
       members[method.get[name]] = function() {
         return qx.core.Property.executeOptimizedGetter(this, clazz, name, "get");
       };
+      members[method.get[name]].$$install = function(value) {
+        qx.core.Property.installOptimizedGetter(this, clazz, name, "get", arguments);
+      };
 
       method.set[name] = "set" + upname;
       members[method.set[name]] = function(value) {
         return qx.core.Property.executeOptimizedSetter(this, clazz, name, "set", arguments);
       };
+      members[method.set[name]].$$install = function(value) {
+        qx.core.Property.installOptimizedSetter(this, clazz, name, "set", arguments);
+      };
 
       method.reset[name] = "reset" + upname;
       members[method.reset[name]] = function() {
         return qx.core.Property.executeOptimizedSetter(this, clazz, name, "reset");
+      };
+      members[method.reset[name]].$$install = function() {
+        qx.core.Property.installOptimizedSetter(this, clazz, name, "reset");
       };
 
       if (config.inheritable || config.apply || config.event || config.deferredInit)
@@ -680,6 +717,33 @@ qx.Bootstrap.define("qx.core.Property",
      */
     __unwrapFunctionFromCode : function(instance, members, name, variant, code, args)
     {
+    	var fn = this.__installFunctionFromCode(instance, members, name, variant, code, args);
+
+      // Executing new function
+      if (args === undefined) {
+        return fn.call(instance);
+      } else if (qx.core.Environment.get("qx.debug")) {
+        return fn.apply(instance, args);
+      } else {
+        return fn.call(instance, args[0]);
+      }
+    },
+
+    
+    /**
+     * Takes a string builder object, converts it into a function, and installs it as
+     * a property accessor
+     *
+     * @param instance {Object} Instance which have called the original method
+     * @param members {Object} Prototype members map where the new function should be stored
+     * @param name {String} Name of the property
+     * @param variant {String} Function variant e.g. get, set, reset, ...
+     * @param code {Array} Array which contains the code
+     * @param args {arguments} Incoming arguments of wrapper method
+     * @return {var} Return value of the generated function
+     */
+    __installFunctionFromCode : function(instance, members, name, variant, code, args)
+    {
       var store = this.$$method[variant][name];
 
       // Output generate code
@@ -707,20 +771,12 @@ qx.Bootstrap.define("qx.core.Property",
       }
 
       qx.Bootstrap.setDisplayName(members[store], instance.classname + ".prototype", store);
-
-      // Executing new function
-      if (args === undefined) {
-        return instance[store]();
-      } else if (qx.core.Environment.get("qx.debug")) {
-        return instance[store].apply(instance, args);
-      } else {
-        return instance[store](args[0]);
-      }
+      return instance[store];
     },
 
 
     /**
-     * Generates the optimized getter
+     * Generates the optimized getter, installs it into the class prototype, and executes it
      * Supported variants: get
      *
      * @param instance {Object} the instance which calls the method
@@ -731,8 +787,42 @@ qx.Bootstrap.define("qx.core.Property",
      */
     executeOptimizedGetter : function(instance, clazz, name, variant)
     {
-      var config = clazz.$$properties[name];
+      var code = this.__compileGetter(instance, clazz, name, variant);
       var members = clazz.prototype;
+      return this.__unwrapFunctionFromCode(instance, members, name, variant, code);
+    },
+    
+    
+    /**
+     * Installs a getter into the class prototype, without executing it
+     * Supported variants: get
+     *
+     * @param instance {Object} the instance which calls the method
+     * @param clazz {Class} the class which originally defined the property
+     * @param name {String} name of the property
+     * @param variant {String} Method variant.
+     */
+    installOptimizedGetter : function(instance, clazz, name, variant)
+    {
+      var code = this.__compileGetter(instance, clazz, name, variant);
+      var members = clazz.prototype;
+      this.__installFunctionFromCode(instance, members, name, variant, code);
+    },
+    
+    
+    /**
+     * Compiles a getter into a string builder array
+     * Supported variants: get
+     *
+     * @param instance {Object} the instance which calls the method
+     * @param clazz {Class} the class which originally defined the property
+     * @param name {String} name of the property
+     * @param variant {String} Method variant.
+     * @return {String[]} the string builder array
+     */
+    __compileGetter: function(instance, clazz, name, variant)
+    {
+      var config = clazz.$$properties[name];
       var code = [];
       var store = this.$$store;
 
@@ -786,7 +876,7 @@ qx.Bootstrap.define("qx.core.Property",
         code.push('throw new Error("Property ', name, ' of an instance of ', clazz.classname, ' is not (yet) ready!");');
       }
 
-      return this.__unwrapFunctionFromCode(instance, members, name, variant, code);
+      return code;
     },
 
 
@@ -803,6 +893,40 @@ qx.Bootstrap.define("qx.core.Property",
      */
     executeOptimizedSetter : function(instance, clazz, name, variant, args)
     {
+    	var code = this.__compileSetter(instance, clazz, name, variant, args);
+      var members = clazz.prototype;
+      return this.__unwrapFunctionFromCode(instance, members, name, variant, code, args);
+    },
+    
+    
+    /**
+     * Installs a setter into the class prototype, without executing it
+     * Supported variants: set
+     *
+     * @param instance {Object} the instance which calls the method
+     * @param clazz {Class} the class which originally defined the property
+     * @param name {String} name of the property
+     * @param variant {String} Method variant.
+     */
+    installOptimizedSetter : function(instance, clazz, name, variant, args)
+    {
+    	var code = this.__compileSetter(instance, clazz, name, variant, args);
+      var members = clazz.prototype;
+      return this.__installFunctionFromCode(instance, members, name, variant, code, args);
+    },
+    
+    
+    /**
+     * Compiles a getter into a string builder array
+     * Supported variants: get
+     *
+     * @param instance {Object} the instance which calls the method
+     * @param clazz {Class} the class which originally defined the property
+     * @param name {String} name of the property
+     * @param variant {String} Method variant.
+     * @return {String[]} the string builder array
+     */
+    __compileSetter: function(instance, clazz, name, variant, args) {
       var config = clazz.$$properties[name];
       var members = clazz.prototype;
       var code = [];
@@ -812,6 +936,8 @@ qx.Bootstrap.define("qx.core.Property",
 
 
       var store = this.__getStore(variant, name);
+
+      this.__emitIsEqualFunction(code, clazz, config, name);
 
       this.__emitSetterPreConditions(code, config, name, variant, incomingValue);
 
@@ -862,7 +988,7 @@ qx.Bootstrap.define("qx.core.Property",
         code.push('return value;');
       }
 
-      return this.__unwrapFunctionFromCode(instance, members, name, variant, code, args);
+      return code;
     },
 
 
@@ -887,6 +1013,48 @@ qx.Bootstrap.define("qx.core.Property",
       }
 
       return store;
+    },
+
+
+    /**
+     * Emit code for the equality check evaluation
+     *
+     * @param code {String[]} String array to append the code to
+     * @param clazz {Class} the class which originally defined the property
+     * @param config {Object} The property configuration map
+     * @param name {String} name of the property
+     */
+    __emitIsEqualFunction : function (code, clazz, config, name)
+    {
+      code.push('var equ=');
+
+      if (typeof config.isEqual === "function")
+      {
+        code.push('function(a,b){return !!', clazz.classname, '.$$properties.',
+                  name, '.isEqual.call(this,a,b);};');
+      }
+      else if (typeof config.isEqual === "string")
+      {
+        var members = clazz.prototype;
+        // Name of member?
+        if (members[config.isEqual]!==undefined)
+        {
+          code.push('this.', config.isEqual, ';');
+        }
+        else // 'inline' code
+        {
+          code.push('function(a,b){return !!(', config.isEqual, ');};');
+        }
+      }
+      else if (typeof config.isEqual === "undefined")
+      {
+        code.push('function(a,b){return a===b;};');
+      }
+      else
+      {
+        throw new Error( "Invalid type for 'isEqual' attribute " +
+          "of property '" + name + "' in class '" + clazz.classname + "'" );
+      }
     },
 
 
@@ -991,7 +1159,7 @@ qx.Bootstrap.define("qx.core.Property",
       );
 
       if (incomingValue) {
-        code.push('if(this.', store, '===value)return value;');
+        code.push('if(equ.call(this,this.', store, ',value))return value;');
       } else if (resetValue) {
         code.push('if(this.', store, '===undefined)return;');
       }
@@ -1427,7 +1595,7 @@ qx.Bootstrap.define("qx.core.Property",
       code.push('}');
 
       // Compare old/new computed value
-      code.push('if(old===computed)return value;');
+      code.push('if(equ.call(this,old,computed))return value;');
 
       // Note: At this point computed can be "inherit" or "undefined".
 
@@ -1474,7 +1642,7 @@ qx.Bootstrap.define("qx.core.Property",
       }
 
       // Compare old/new computed value
-      code.push('if(old===computed)return value;');
+      code.push('if(equ.call(this,old,computed))return value;');
 
       // Normalize old value
       if (config.init !== undefined && variant !== "init") {

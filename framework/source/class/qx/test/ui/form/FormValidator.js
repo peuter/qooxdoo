@@ -8,8 +8,7 @@
      2004-2009 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -1061,6 +1060,26 @@ qx.Class.define("qx.test.ui.form.FormValidator",
       var items = this.__manager.getItems();
       this.assertInArray(this.__username, items);
       this.assertInArray(this.__password1, items);
+    },
+    // //////////////////////////////
+
+
+    // validate //////////////////////
+    testValidateDataBindingSelection : function() {
+      "use strict";
+      var vsb = new qx.ui.form.VirtualSelectBox();
+      vsb.setRequired(true);
+      this.__manager.add(vsb);
+      this.__manager.validate();
+      this.assertFalse(vsb.isValid());
+
+      var m = qx.data.marshal.Json.createModel(['a', 'b']);
+      vsb.setModel(m);
+      this.__manager.validate();
+      this.assertTrue(vsb.isValid());
+
+      vsb.dispose();
+      m.dispose();
     }
     // //////////////////////////////
   }

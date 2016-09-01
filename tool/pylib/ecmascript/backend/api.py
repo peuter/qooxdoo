@@ -10,8 +10,7 @@
 #    2006-2010 1&1 Internet AG, Germany, http://www.1und1.de
 #
 #  License:
-#    LGPL: http://www.gnu.org/licenses/lgpl.html
-#    EPL: http://www.eclipse.org/org/documents/epl-v10.php
+#    MIT: https://opensource.org/licenses/MIT
 #    See the LICENSE file in the project's top-level directory for details.
 #
 #  Authors:
@@ -1412,10 +1411,15 @@ def dependendClassIterator(docTree, classNode):
     if superClassName:
         directDependencies.append(superClassName)
 
-    for list_ in ["mixins", "interfaces", "superMixins", "superInterfaces"]:
+    for list_ in ["mixins", "interfaces"]:
         listItems = classNode.get(list_, False)
         if listItems:
             directDependencies.extend(listItems.split(","))
+
+    for list_ in ["superMixins", "superInterfaces"]:
+        listNode = classNode.getChild(list_, False)
+        if listNode:
+            directDependencies.extend([depNode.get("name") for depNode in listNode.children])
 
     for dep in directDependencies:
         for cls in dependendClassIterator(docTree, classNodeFromDocTree(docTree, dep)):

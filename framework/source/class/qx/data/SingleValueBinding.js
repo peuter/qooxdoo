@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -839,7 +838,7 @@ qx.Class.define("qx.data.SingleValueBinding",
       for (var i = 0; i < propertyNames.length; i++) {
         var name = propertyNames[i];
         // if its an array property in the chain
-        if (qx.lang.String.endsWith(name, "]")) {
+        if (name.endsWith("]")) {
           // get the inner value of the array notation
           var arrayIndex = name.substring(name.indexOf("[") + 1, name.indexOf("]"));
 
@@ -850,7 +849,7 @@ qx.Class.define("qx.data.SingleValueBinding",
           }
           if (arrayIndex !== "last") {
             if (arrayIndex == "" || isNaN(parseInt(arrayIndex, 10))) {
-              throw new Error("No number or 'last' value hast been given"
+              throw new Error("No number or 'last' value has been given"
                 + " in an array binding: " + name + " does not work.");
             }
           }
@@ -1310,6 +1309,8 @@ qx.Class.define("qx.data.SingleValueBinding",
     /**
      * Removes all binding in the whole application. After that not a single
      * binding is left.
+     * @deprecated {6.0} dispose and destructors are deprecated because of automatic memory management; this 
+     * will only work for objects explicitly registered with ObjectRegistry.register
      */
     removeAllBindings : function() {
       // go threw all registered objects
@@ -1372,13 +1373,16 @@ qx.Class.define("qx.data.SingleValueBinding",
     /**
      * Debug function which shows all bindings in the log console. To get only
      * one binding in the console use {@link #showBindingInLog}
+     * @deprecated {6.0} qx.core.ObjectRegistry no longer stores most objects
      */
     showAllBindingsInLog : function() {
       // go threw all objects in the registry
       for (var hash in this.__bindings) {
         var object = qx.core.ObjectRegistry.fromHashCode(hash);
-        for (var i = 0; i < this.__bindings[hash].length; i++) {
-          this.showBindingInLog(object, this.__bindings[hash][i][0]);
+        if (object) {
+	        for (var i = 0; i < this.__bindings[hash].length; i++) {
+	          this.showBindingInLog(object, this.__bindings[hash][i][0]);
+	        }
         }
       }
     }

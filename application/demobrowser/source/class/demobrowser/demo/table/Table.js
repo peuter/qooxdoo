@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -90,6 +89,13 @@ qx.Class.define("demobrowser.demo.table.Table",
 
       part = new qx.ui.toolbar.Part();
       bar.add(part);
+
+      checkbox = new qx.ui.toolbar.CheckBox("Show ID column");
+      checkbox.setValue(true);
+      checkbox.addListener("execute", function() {
+          table.getTableColumnModel().setColumnVisible(0, this.getValue());
+      }, checkbox);
+      part.add(checkbox);
 
       button = new qx.ui.toolbar.Button("Change row with ID 10", "icon/22/actions/edit-undo.png");
       button.addListener("execute", function(evt) {

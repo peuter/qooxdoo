@@ -8,8 +8,7 @@
      2004-2012 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -231,6 +230,17 @@ qx.Mixin.define("qx.dev.unit.MRequirements", {
     hasWebkit : function()
     {
       return qx.core.Environment.get("engine.name") == "webkit";
+    },
+
+
+    /**
+     * Checks if the application is NOT running on OS X
+     *
+     * @return {Boolean} <code>true</code> if the operating system is NOT OX X
+     */
+    hasNoOsx : function()
+    {
+      return (qx.core.Environment.get("os.name") === "osx"?false:true);
     },
 
 

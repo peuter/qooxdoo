@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -107,8 +106,8 @@ qx.Class.define("qx.ui.root.Page",
         textAlign: "left"
       });
 
-      // Store "weak" reference to the widget in the DOM element.
-      root.setAttribute("$$widget", this.toHashCode());
+      // Store reference to the widget in the DOM element.
+      root.connectWidget(this);
 
       // Mark the element of this root with a special attribute to prevent
       // that qx.event.handler.Focus is performing a focus action.

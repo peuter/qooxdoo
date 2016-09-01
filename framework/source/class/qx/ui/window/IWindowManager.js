@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -30,10 +29,12 @@ qx.Interface.define("qx.ui.window.IWindowManager",
     /**
      * Connect the window manager to the window desktop
      *
-     * @param desktop {IDesktop} The connected desktop
+     * @param desktop {IDesktop|null} The connected desktop or null
      */
     setDesktop : function(desktop) {
-      this.assertInterface(desktop, qx.ui.window.IDesktop);
+      if (desktop !== null) {
+        this.assertInterface(desktop, qx.ui.window.IDesktop);
+      }
     },
 
     /**

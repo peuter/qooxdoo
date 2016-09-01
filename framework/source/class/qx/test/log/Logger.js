@@ -8,8 +8,7 @@
      2004-2009 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -91,6 +90,7 @@ qx.Class.define("qx.test.log.Logger",
       qx.log.Logger.register(appender);
 
       var obj = new qx.core.Object();
+      qx.core.ObjectRegistry.register(obj);
       qx.log.Logger.debug(qx.core.Object, "m1");
       qx.log.Logger.debug(obj, "m2");
       qx.log.Logger.debug(qxWeb(), "m3");

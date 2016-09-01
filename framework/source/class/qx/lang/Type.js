@@ -8,8 +8,7 @@
      2007-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -90,6 +89,11 @@ qx.Bootstrap.define("qx.lang.Type",
 
     /**
     * Whether the value is a number.
+    *
+    * This function checks if the _type_ of the value is Number.
+    * Global properties *NaN*, *-Infinity*, *+Infinity*,
+    * *Number.POSITIVE_INFINITY* and *Number.NEGATIVE_INFINITY*
+    * return true.
     *
     * @param value {var} Value to check.
     * @return {Boolean} Whether the value is a number.

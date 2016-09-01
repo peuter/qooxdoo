@@ -8,8 +8,7 @@
      2007-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -32,13 +31,15 @@
  * * TabIndex > 0 means that the element is focusable and tabable
  * * TabIndex < 0 means that the element, even if naturally possible, is not focusable.
  *
+ * NOTE: Instances of this class must be disposed of after use
+ *
  * @use(qx.event.dispatch.DomBubbling)
  */
 qx.Class.define("qx.event.handler.Focus",
 {
   extend : qx.core.Object,
-  implement : qx.event.IEventHandler,
-
+  implement : [ qx.event.IEventHandler, qx.core.IDisposable ],
+  
   /*
   *****************************************************************************
      CONSTRUCTOR

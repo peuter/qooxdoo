@@ -8,8 +8,7 @@
      2007-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -88,6 +87,22 @@ qx.Class.define("qx.test.core.Object",
       this.assertEquals(1, called);
       this.fireEvent("test");
       this.assertEquals(1, called);
+    },
+
+
+    testAddListenerOnceWithDifferentContext : function()
+    {
+      var called = 0;
+      var listener = function() {
+        // debugger;
+        called++;
+      };
+      var context1 = {name: "context1"};
+      var context2 = {name: "context2"};
+      this.addListenerOnce("test", listener, context1);
+      this.addListenerOnce("test", listener, context2);
+      this.fireEvent("test");
+      this.assertEquals(2, called);
     },
 
 

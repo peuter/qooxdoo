@@ -8,8 +8,7 @@
      2011 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -28,6 +27,11 @@
  *
  * For more information see:
  * http://www.w3.org/TR/geolocation-API/
+ * 
+ * This class does not need to be disposed, but you would obviously call 
+ * stopWatchPosition() to top watching and free up resources consumed
+ * by startWatchPosition().  The destructor will do this for you, if
+ * you call dispose()
  *
  */
 qx.Class.define("qx.bom.GeoLocation",

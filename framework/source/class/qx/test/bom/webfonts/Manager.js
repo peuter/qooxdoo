@@ -8,8 +8,7 @@
      2007-2011 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
 ************************************************************************ */
@@ -37,6 +36,13 @@ qx.Class.define("qx.test.bom.webfonts.Manager", {
         source: [ qx.util.ResourceManager.getInstance().toUri("qx/test/webfonts/fineliner_script-webfont.woff"),
                   qx.util.ResourceManager.getInstance().toUri("qx/test/webfonts/fineliner_script-webfont.ttf"),
                   qx.util.ResourceManager.getInstance().toUri("qx/test/webfonts/fineliner_script-webfont.eot") ]
+      },
+      fontawesome :
+      {
+        family : "FontAwesome",
+        source: [ qx.util.ResourceManager.getInstance().toUri("qx/test/webfonts/fontawesome-webfont.woff"),
+                  qx.util.ResourceManager.getInstance().toUri("qx/test/webfonts/fontawesome-webfont.ttf"),
+                  qx.util.ResourceManager.getInstance().toUri("qx/test/webfonts/fontawesome-webfont.eot") ]
       },
       invalid :
       {
@@ -127,6 +133,28 @@ qx.Class.define("qx.test.bom.webfonts.Manager", {
         that.resume(function() {
           var foundRule = this.__findRule(this.__fontDefinitions.invalid.family);
           this.assertFalse(foundRule, "@font-face rule for invalid font found in document styles!");
+        }, that);
+
+      }, 2000);
+
+      this.wait(3000);
+    },
+
+    "test: load webfont whith custom comparisonString" : function()
+    {
+      qx.bom.webfonts.Manager.VALIDATION_TIMEOUT = 100;
+      var font = new qx.bom.webfonts.WebFont();
+      font.set({
+        family: ["fontawesome"],
+        comparisonString : "\uf206\uf1e3\uf118\uf2a7",
+        sources: [this.__fontDefinitions.fontawesome]
+      });
+
+      var that = this;
+      window.setTimeout(function() {
+        that.resume(function() {
+          var foundRule = this.__findRule(this.__fontDefinitions.fontawesome.family);
+          this.assertTrue(foundRule, "@font-face rule for custom comparisonString font not found in document styles!");
         }, that);
 
       }, 2000);

@@ -8,8 +8,7 @@
      2004-2009 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -229,23 +228,10 @@ qx.Class.define("qx.data.marshal.Json",
         extend : superClass,
         include : mixins,
         properties : properties,
-        members : members,
-        destruct : this.__disposeProperties
+        members : members
       };
 
       qx.Class.define("qx.data.model." + hash, newClass);
-    },
-
-
-    /**
-     * Destructor for all created classes which disposes all stuff stored in
-     * the properties.
-     */
-    __disposeProperties : function() {
-      var properties = qx.util.PropertyUtil.getAllProperties(this.constructor);
-      for (var desc in properties) {
-        this.__disposeItem(this.get(properties[desc].name));
-      };
     },
 
 
@@ -404,15 +390,5 @@ qx.Class.define("qx.data.marshal.Json",
 
       throw new Error("Unsupported type!");
     }
-  },
-
-  /*
-   *****************************************************************************
-      DESTRUCT
-   *****************************************************************************
-   */
-
-  destruct : function() {
-    this.__delegate = null;
   }
 });

@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -21,11 +20,15 @@
 
 /**
  * Manager for decoration themes
+ * 
+ * NOTE: Instances of this class must be disposed of after use
+ *
  */
 qx.Class.define("qx.theme.manager.Decoration",
 {
   type : "singleton",
   extend : qx.core.Object,
+  implement : [ qx.core.IDisposable ],
 
 
   statics :
@@ -122,8 +125,12 @@ qx.Class.define("qx.theme.manager.Decoration",
       // create and add a CSS rule
       var css = "";
       var styles = instance.getStyles(true);
-      for (var key in styles) {
-
+      
+      // Sort the styles so that more specific styles come after the group styles, 
+      //  eg background-color comes after background.  The reordering is only applied
+      //  to rules which begin with the names in REORDER; the sort order is alphabetical
+      //  so that short cut rules come before actual
+      Object.keys(styles).sort().forEach(function(key) {
         // if we find a map value, use it as pseudo class
         if (qx.Bootstrap.isObject(styles[key])) {
           var innerCss = "";
@@ -137,10 +144,10 @@ qx.Class.define("qx.theme.manager.Decoration",
             selector + (inner ? ":" : "");
           this.__rules.push(innerSelector + key);
           sheet.addRule(innerSelector + key, innerCss);
-          continue;
+          return;
         }
         css += key + ":" + styles[key] + ";";
-      }
+      }, this);
 
       if (css) {
         sheet.addRule(selector, css);

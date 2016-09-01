@@ -8,8 +8,7 @@
      2004-2011 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -120,9 +119,9 @@ qx.Class.define("qx.test.io.request.XhrWithRemote",
 
     "test: progress phases when abort after loading": function() {
       // Note:
-      //   * Breaks on Windows 7 in every browser because the loading phase
+      //   * Breaks on Windows 7 and OS X in every browser because the loading phase
       //     is never entered
-      this.require(["noIe", "noWin7"]);
+      this.require(["noIe", "noWin7", "noOsx"]);
 
       var req = this.req,
           phases = [],

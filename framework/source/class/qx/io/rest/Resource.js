@@ -8,8 +8,7 @@
      2004-2011 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -116,10 +115,14 @@
  * from the event data, or listen to action specific events defined at runtime.
  * Action specific events follow the pattern "&lt;action&gt;Success" and
  * "&lt;action&gt;Error", e.g. "indexSuccess".
+ * 
+ * NOTE: Instances of this class must be disposed of after use
+ *
  */
 qx.Class.define("qx.io.rest.Resource",
 {
   extend: qx.core.Object,
+  implement : [ qx.core.IDisposable ],
 
   /**
    * @param description {Map?} Each key of the map is interpreted as
@@ -665,7 +668,7 @@ qx.Class.define("qx.io.rest.Resource",
   },
 
   /**
-   * Desctructs the Resource.
+   * Destructs the Resource.
    *
    * All created requests, routes and pollTimers will be disposed.
    */

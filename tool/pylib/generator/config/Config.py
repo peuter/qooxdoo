@@ -11,8 +11,7 @@
 #    2006-2010 1&1 Internet AG, Germany, http://www.1und1.de
 #
 #  License:
-#    LGPL: http://www.gnu.org/licenses/lgpl.html
-#    EPL: http://www.eclipse.org/org/documents/epl-v10.php
+#    MIT: https://opensource.org/licenses/MIT
 #    See the LICENSE file in the project's top-level directory for details.
 #
 #  Authors:
@@ -100,8 +99,8 @@ class Config(object):
 
         self._data = data
         self._rawdata = deepcopy(data)
-        self._fname = os.path.abspath(fname)
-        self._dirname = os.path.dirname(self._fname)
+        self._fname = os.path.abspath(fname).decode('utf-8')
+        self._dirname = os.path.dirname(self._fname).decode('utf-8')
 
 
     def expandTopLevelKeys(self):
@@ -367,7 +366,7 @@ class Config(object):
     # lookup).
     def resolveIncludes(self, includeTree=graph.digraph()):
 
-        console.debug("including %s" % (self._fname.decode('utf-8') or "<unknown>",))
+        console.debug("including %s" % (self._fname or "<unknown>",))
         config  = self._data
         jobsmap = self.getJobsMap({})
 

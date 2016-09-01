@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -25,6 +24,11 @@
  * A tab view is a multi page view where only one page is visible
  * at each moment. It is possible to switch the pages using the
  * buttons rendered by each page.
+ * 
+ * Note that prior to v6.0, when changing the currently selected tab via code
+ * (ie changing the selection property) TabView would automatically set the 
+ * focus to that tab; this is undesirable (and inconsistent with other parts
+ * of the framework) and is no longer done automatically.
  *
  * @childControl bar {qx.ui.container.SlideBar} slidebar for all tab buttons
  * @childControl pane {qx.ui.container.Stack} stack container to show one tab page
@@ -564,7 +568,6 @@ qx.Class.define("qx.ui.tabview.TabView",
       {
         value = [button.getUserData("page")];
         pane.setSelection(value);
-        button.focus();
         this.scrollChildIntoView(button, null, null, false);
       }
       else

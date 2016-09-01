@@ -8,8 +8,7 @@
      2004-2009 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -20,6 +19,13 @@
 
 /**
  * A wrapper for Cookie handling.
+ *
+ * Previous versions of qooxoo use `escape()` and `unescape()` functions. Since those functions
+ * are deprecated, then now qooxdoo use `encodeURIComponent()` and `decodeURIComponent()` functions.
+ * This may break some cookies.
+ * There are no issues with special characters like `~!@#$%^&*(){}[]=:/,;?+\'"\\` but some unicode
+ * characters like `äëíöü` (etc) are encoded different by `escape()` and `encodeURIComponent()`,
+ * so you must take care of this change if you use unicode characters.
  */
 qx.Bootstrap.define("qx.bom.Cookie",
 {
@@ -63,7 +69,13 @@ qx.Bootstrap.define("qx.bom.Cookie",
         end = document.cookie.length;
       }
 
-      return unescape(document.cookie.substring(len, end));
+      try {
+        return decodeURIComponent(document.cookie.substring(len, end));
+      }
+      catch (URIError) {
+        qx.log.Logger.error("Error decoding URI components", URIError.message);
+        return null;
+      }
     },
 
 
@@ -81,7 +93,7 @@ qx.Bootstrap.define("qx.bom.Cookie",
     set : function(key, value, expires, path, domain, secure)
     {
       // Generate cookie
-      var cookie = [ key, "=", escape(value) ];
+      var cookie = [ key, "=", encodeURIComponent(value) ];
 
       if (expires)
       {

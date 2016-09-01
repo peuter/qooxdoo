@@ -8,8 +8,7 @@
      2007-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -56,6 +55,7 @@ qx.Class.define("qx.test.bom.Attribute",
 
       this.__maxLengthValues = {
         "mshtml": 2147483647,
+        "webkit": 524288,
         "default": -1
       };
     },
@@ -164,6 +164,9 @@ qx.Class.define("qx.test.bom.Attribute",
 
       if (qx.core.Environment.get("browser.name") == "edge") {
         maxLengthValue = this.__maxLengthValues.mshtml;
+      }
+      else if (qx.core.Environment.get("browser.name") == "chrome") {
+        maxLengthValue = this.__maxLengthValues["default"];
       }
 
       this.assertEquals(maxLengthValue, this._input["maxLength"]);
