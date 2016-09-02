@@ -201,7 +201,13 @@ qx.Class.define("qx.ui.virtual.layer.WidgetCell",
           var row = firstRow + y;
           var column = firstColumn + x;
 
-          var item = cellProvider.getCellWidget(row, column) || this._getSpacer();
+          try {
+            var item = cellProvider.getCellWidget(row, column) || this._getSpacer();
+          } catch (e) {
+            // model has changed and the binding from model -> widget is not possible
+            // abort, the model change triggered another update with the correct row/column data
+            return;
+          }
 
           visibleItems.push(item);
 
