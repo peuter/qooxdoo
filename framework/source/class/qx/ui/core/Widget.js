@@ -837,6 +837,14 @@ qx.Class.define("qx.ui.core.Widget",
       init : "widget",
       apply : "_applyAppearance",
       event : "changeAppearance"
+    },
+
+    longtapable :
+    {
+      check : "Boolean",
+      init : false,
+      event : "changeLongtapable",
+      apply : "_applyLongtapable"
     }
   },
 
@@ -3035,6 +3043,10 @@ qx.Class.define("qx.ui.core.Widget",
           this.addListener("longtap", this._onContextMenuOpen);
           value.addListener("changeVisibility", this._onBeforeContextMenuOpen, this);
         }
+
+
+        // Enable longtap support
+        this.setLongtapable(true);
       }
     },
 
@@ -3840,7 +3852,27 @@ qx.Class.define("qx.ui.core.Widget",
     },
 
 
+    __updateLongtapable : function(value)
+    {
+      var el = this.getContentElement().getDomElement();
+      if (value) {
+        el.setAttribute("qxlongtapable", "on");
+      } else {
+        el.removeAttribute("qxlongtapable");
+      }
+    },
 
+
+    _applyLongtapable : function(value)
+    {
+      if (this.getContentElement().getDomElement()) {
+        this.__updateLongtapable(value);
+      } else {
+        this.addListenerOnce("appear", function() {
+          this.__updateLongtapable(value);
+        }, this);
+      }
+    },
 
 
     /*
