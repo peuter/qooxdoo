@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -74,6 +73,40 @@ qx.Class.define("qx.test.ui.basic.Label",
       container.destroy();
     },
 
+
+    testSelectableSetOnCreate : function() {
+      var l = new qx.ui.basic.Label().set({selectable : true});
+      this.getRoot().add(l);
+      this.flush();
+      this.assertEquals("on", l.getContentElement().getDomElement().getAttribute("qxselectable"));
+      l.destroy();
+    },
+
+    testSelectableUnSetOnCreate : function() {
+      var l = new qx.ui.basic.Label().set({selectable : false});
+      this.getRoot().add(l);
+      this.flush();
+      this.assertEquals("off", l.getContentElement().getDomElement().getAttribute("qxselectable"));
+      l.destroy();
+    },
+
+    testSelectableSet : function() {
+      var l = new qx.ui.basic.Label();
+      l.setSelectable(true);
+      this.getRoot().add(l);
+      this.flush();
+      this.assertEquals("on", l.getContentElement().getDomElement().getAttribute("qxselectable"));
+      l.destroy();
+    },
+
+    testSelectableUnset : function() {
+      var l = new qx.ui.basic.Label();
+      l.setSelectable(false);
+      this.getRoot().add(l);
+      this.flush();
+      this.assertEquals("off", l.getContentElement().getDomElement().getAttribute("qxselectable"));
+      l.destroy();
+    },
 
     testWrapSet : function() {
       var l = new qx.ui.basic.Label();
@@ -175,7 +208,7 @@ qx.Class.define("qx.test.ui.basic.Label",
       font1.dispose();
     },
 
-    testBudy : function() {
+    testBuddy : function() {
       var label = new qx.ui.basic.Label();
       var textfield1 = new qx.ui.form.TextField();
       var textfield2 = new qx.ui.form.TextField();

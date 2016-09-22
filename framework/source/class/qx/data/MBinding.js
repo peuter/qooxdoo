@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -66,7 +65,7 @@ qx.Mixin.define("qx.data.MBinding",
 
     /**
      * Removes the binding with the given id from the current object. The
-     * id hast to be the id returned by any of the bind functions.
+     * id has to be the id returned by any of the bind functions.
      *
      * @param id {var} The id of the binding.
      * @throws {Error} If the binding could not be found.

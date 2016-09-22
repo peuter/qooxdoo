@@ -8,8 +8,7 @@
      2005-2011 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -255,6 +254,14 @@
  *       <td>{@link qx.bom.client.EcmaScript#getArraySome}</td>
  *     </tr>
  *     <tr>
+ *       <td>ecmascript.array.find<td><i>Boolean</i></td><td><code>true</code></td>
+ *       <td>{@link qx.bom.client.EcmaScript#getArrayFind}</td>
+ *     </tr>
+ *     <tr>
+ *       <td>ecmascript.array.findIndex<td><i>Boolean</i></td><td><code>true</code></td>
+ *       <td>{@link qx.bom.client.EcmaScript#getArrayFindIndex}</td>
+ *     </tr>
+ *     <tr>
  *       <td>ecmascript.array.every<td><i>Boolean</i></td><td><code>true</code></td>
  *       <td>{@link qx.bom.client.EcmaScript#getArrayEvery}</td>
  *     </tr>
@@ -279,12 +286,24 @@
  *       <td>{@link qx.bom.client.EcmaScript#getDateNow}</td>
  *     </tr>
  *     <tr>
+ *       <td>ecmascript.date.parse<td><i>Boolean</i></td><td><code>true</code></td>
+ *       <td>{@link qx.bom.client.EcmaScript#getDateParse}</td>
+ *     </tr>
+ *     <tr>
  *       <td>ecmascript.error.toString</td><td><i>Boolean</i></td><td><code>true</code></td>
  *       <td>{@link qx.bom.client.EcmaScript#getErrorToString}</td>
  *     </tr>
  *     <tr>
  *       <td>ecmascript.string.trim</td><td><i>Boolean</i></td><td><code>true</code></td>
  *       <td>{@link qx.bom.client.EcmaScript#getStringTrim}</td>
+ *     </tr>
+ *     <tr>
+ *       <td>ecmascript.string.startsWith</td><td><i>Boolean</i></td><td><code>true</code></td>
+ *       <td>{@link qx.bom.client.EcmaScript#getStringStartsWith}</td>
+ *     </tr>
+ *     <tr>
+ *       <td>ecmascript.string.endsWith</td><td><i>Boolean</i></td><td><code>true</code></td>
+ *       <td>{@link qx.bom.client.EcmaScript#getStringEndsWith}</td>
  *     </tr>
  *     <tr>
  *       <td colspan="4"><b>engine</b></td>

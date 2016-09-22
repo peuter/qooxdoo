@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -41,6 +40,9 @@
  *
  * <a href='http://manual.qooxdoo.org/${qxversion}/pages/widget/image.html' target='_blank'>
  * Documentation of this widget in the qooxdoo manual.</a>
+ * 
+ * NOTE: Instances of this class must be disposed of after use
+ *
  */
 qx.Class.define("qx.ui.basic.Image",
 {
@@ -101,6 +103,7 @@ qx.Class.define("qx.ui.basic.Image",
     {
       check : "Boolean",
       init : false,
+      event : "changeScale",
       themeable : true,
       apply : "_applyScale"
     },
@@ -339,7 +342,7 @@ qx.Class.define("qx.ui.basic.Image",
         var source = this.getSource();
         var isPng = false;
         if (source != null) {
-          isPng = qx.lang.String.endsWith(source, ".png");
+          isPng = source.endsWith(".png");
         }
 
         if (this.getScale() && isPng && qx.core.Environment.get("css.alphaimageloaderneeded")) {
@@ -382,7 +385,7 @@ qx.Class.define("qx.ui.basic.Image",
       }
 
       var element = new qx.html.Image(tagName);
-      element.setAttribute("$$widget", this.toHashCode());
+      element.connectWidget(this);
       element.setScale(scale);
       element.setStyles({
         "overflowX": "hidden",
@@ -392,7 +395,7 @@ qx.Class.define("qx.ui.basic.Image",
 
       if (qx.core.Environment.get("css.alphaimageloaderneeded")) {
         var wrapper = this.__wrapper = new qx.html.Element("div");
-        wrapper.setAttribute("$$widget", this.toHashCode());
+        element.connectWidget(this);
         wrapper.setStyle("position", "absolute");
         wrapper.add(element);
         return wrapper;
@@ -436,7 +439,10 @@ qx.Class.define("qx.ui.basic.Image",
      */
     _styleSource : function()
     {
-      var source = qx.util.AliasManager.getInstance().resolve(this.getSource());
+      var AliasManager = qx.util.AliasManager.getInstance();
+      var ResourceManager = qx.util.ResourceManager.getInstance();
+
+      var source = AliasManager.resolve(this.getSource());
 
       var element = this.getContentElement();
       if (this.__wrapper) {
@@ -462,12 +468,11 @@ qx.Class.define("qx.ui.basic.Image",
       var contentEl = this.__getContentElement();
 
       // Detect if the image registry knows this image
-      var resourceManager = qx.util.ResourceManager.getInstance();
-      if (resourceManager.has(source)) {
+      if (qx.util.ResourceManager.getInstance().has(source)) {
         var highResolutionSource = this._findHighResolutionSource(source);
         if (highResolutionSource) {
-          var imageWidth = resourceManager.getImageHeight(source);
-          var imageHeight = resourceManager.getImageWidth(source);
+          var imageWidth = ResourceManager.getImageHeight(source);
+          var imageHeight = ResourceManager.getImageWidth(source);
           this.setWidth(imageWidth);
           this.setHeight(imageHeight);
 
@@ -535,7 +540,7 @@ qx.Class.define("qx.ui.basic.Image",
       "mshtml" : function(source)
       {
         var alphaImageLoader = qx.core.Environment.get("css.alphaimageloaderneeded");
-        var isPng = qx.lang.String.endsWith(source, ".png");
+        var isPng = source.endsWith(".png");
 
         if (alphaImageLoader && isPng)
         {
@@ -585,7 +590,7 @@ qx.Class.define("qx.ui.basic.Image",
         {
           var pixel = "px";
           var styles = {};
-          
+
           //inherit styles from current element
           var currentStyles = currentContentElement.getAllStyles();
           if(currentStyles) {
@@ -697,8 +702,10 @@ qx.Class.define("qx.ui.basic.Image",
       this.__setSource(el, source);
 
       // Compare with old sizes and relayout if necessary
-      this.__updateContentHint(ResourceManager.getImageWidth(source),
-        ResourceManager.getImageHeight(source));
+      this.__updateContentHint(
+        ResourceManager.getImageWidth(source),
+        ResourceManager.getImageHeight(source)
+      );
     },
 
 
@@ -737,9 +744,8 @@ qx.Class.define("qx.ui.basic.Image",
         // loading external images via HTTP/HTTPS is a common usecase, as is
         // using data URLs.
         var sourceLC = source.toLowerCase();
-        var startsWith = qx.lang.String.startsWith;
-        if (!startsWith(sourceLC, "http") &&
-            !startsWith(sourceLC, "data:image/"))
+        if (!sourceLC.startsWith("http") &&
+            !sourceLC.startsWith("data:image/"))
         {
           var self = this.self(arguments);
 
@@ -773,15 +779,12 @@ qx.Class.define("qx.ui.basic.Image",
      * @param el {Element} image DOM element
      * @param source {String} source path
      */
-    __setSource : function(el, source) {
-      var highResSource = (source && qx.util.ResourceManager.getInstance().has(source)) ?
-          this._findHighResolutionSource(source) : null;
+    __setSource: function (el, source) {
+      if (el.getNodeName() == "div") {
 
-      var decorator = qx.theme.manager.Decoration.getInstance().resolve(this.getDecorator());
-
-      if (el.getNodeName() == "div" || (highResSource && decorator)) {
-
-        // if the decorator defines any CSS background-image
+        // checks if a decorator already set.
+        // In this case we have to merge background styles
+        var decorator = qx.theme.manager.Decoration.getInstance().resolve(this.getDecorator());
         if (decorator) {
           var hasGradient = (decorator.getStartColor() && decorator.getEndColor());
           var hasBackground = decorator.getBackgroundImage();
@@ -789,23 +792,18 @@ qx.Class.define("qx.ui.basic.Image",
             var repeat = this.getScale() ? "scale" : "no-repeat";
 
             // get the style attributes for the given source
-            var attr = qx.bom.element.Decoration.getAttributes(highResSource || source, repeat);
+            var attr = qx.bom.element.Decoration.getAttributes(source, repeat);
             // get the background image(s) defined by the decorator
-            var decStyle = decorator.getStyles(true);
+            var decoratorStyle = decorator.getStyles(true);
 
             var combinedStyles = {
-              "backgroundImage":  attr.style.backgroundImage,
+              "backgroundImage": attr.style.backgroundImage,
               "backgroundPosition": (attr.style.backgroundPosition || "0 0"),
               "backgroundRepeat": (attr.style.backgroundRepeat || "no-repeat")
             };
-            if (highResSource) {
-              combinedStyles.backgroundSize = "100%, auto";
-              combinedStyles.backgroundRepeat = "no-repeat";
-              combinedStyles.backgroundPosition = "50% 50%";
-            }
 
             if (hasBackground) {
-              combinedStyles["backgroundPosition"] += "," + decStyle["background-position"] || "0 0";
+              combinedStyles["backgroundPosition"] += "," + decoratorStyle["background-position"] || "0 0";
               combinedStyles["backgroundRepeat"] += ", " + decorator.getBackgroundRepeat();
             }
 
@@ -814,14 +812,10 @@ qx.Class.define("qx.ui.basic.Image",
               combinedStyles["backgroundRepeat"] += ", no-repeat";
             }
 
-            combinedStyles["backgroundImage"] += "," + decStyle["background-image"];
+            combinedStyles["backgroundImage"] += "," + (decoratorStyle["background-image"] || decoratorStyle["background"]);
 
             // apply combined background images
             el.setStyles(combinedStyles);
-
-            if(el.getNodeName() == "img") {
-              el.setAttribute("src", qx.ui.basic.Image.PLACEHOLDER_IMAGE);
-            }
 
             return;
           }
@@ -831,11 +825,7 @@ qx.Class.define("qx.ui.basic.Image",
         }
       }
 
-      if (highResSource) {
-        this._createHighResolutionOverlay(highResSource);
-      } else {
-        el.setSource(source);
-      }
+      el.setSource(source);
     },
 
     /**
@@ -902,28 +892,6 @@ qx.Class.define("qx.ui.basic.Image",
       return null;
     },
 
-
-    /**
-     * Creates an overlay for this image which shows the image defined by the parameter 'highResSource',
-     * but has the same size and position as the source image.
-     * The original image widget is hidden by this method.
-     *
-     * @param highResSource {String} Image source of the high-resolution image.
-     */
-    _createHighResolutionOverlay : function(highResSource) {
-      // Replace the source through transparent pixel for making the high-resolution background image visible.
-      var el = this.getContentElement();
-      el.setAttribute("src", qx.ui.basic.Image.PLACEHOLDER_IMAGE);
-      var resourceManager = qx.util.ResourceManager.getInstance();
-      el.setStyles({
-        backgroundImage: "url("+resourceManager.toUri(highResSource)+")",
-        backgroundSize: "100%",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "50% 50%",
-        position: "absolute"
-      });
-    },
-
     /**
      * Event handler fired after the preloader has finished loading the icon
      *
@@ -943,7 +911,7 @@ qx.Class.define("qx.ui.basic.Image",
         return;
       }
 
-      // Output a warning if the image could not loaded and quit
+      /// Output a warning if the image could not loaded and quit
       if (imageInfo.failed) {
         this.warn("Image could not be loaded: " + source);
         this.fireEvent("loadingFailed");
@@ -986,8 +954,10 @@ qx.Class.define("qx.ui.basic.Image",
   */
 
   destruct : function() {
-    if (this.__currentContentElement) {
-      this.__currentContentElement.setAttribute("$$widget", null, true);
+    for (var mode in this.__contentElements) {
+      if (this.__contentElements.hasOwnProperty(mode)) {
+        this.__contentElements[mode].disconnectWidget(this);
+      }
     }
 
     delete this.__currentContentElement;

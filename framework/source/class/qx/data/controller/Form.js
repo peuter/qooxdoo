@@ -8,8 +8,7 @@
      2004-2009 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -46,7 +45,8 @@
 qx.Class.define("qx.data.controller.Form",
 {
   extend : qx.core.Object,
-
+  implement: [ qx.core.IDisposable ],
+  
   /**
    * @param model {qx.core.Object | null} The model to bind the target to. The
    *   given object will be set as {@link #model} property.

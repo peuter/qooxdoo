@@ -8,8 +8,7 @@
      2014 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -27,6 +26,7 @@
 qx.Bootstrap.define("qx.event.handler.PointerCore", {
 
   extend : Object,
+  implement: [ qx.core.IDisposable ],
 
   statics : {
     MOUSE_TO_POINTER_MAPPING: {

@@ -8,8 +8,7 @@
      2004-2011 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -37,11 +36,14 @@
  *
  * This class provides support for HTML5 transition and animation events.
  * Currently only WebKit and Firefox are supported.
+ * 
+ * NOTE: Instances of this class must be disposed of after use
+ *
  */
 qx.Class.define("qx.event.handler.Transition",
 {
   extend : qx.core.Object,
-  implement : qx.event.IEventHandler,
+  implement : [ qx.event.IEventHandler, qx.core.IDisposable ],
 
 
 

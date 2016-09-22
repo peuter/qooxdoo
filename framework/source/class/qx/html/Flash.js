@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -20,6 +19,9 @@
 
 /**
  * Managed wrapper for the HTML Flash tag.
+ * 
+ * NOTE: Instances of this class must be disposed of after use
+ *
  */
 qx.Class.define("qx.html.Flash",
 {
@@ -177,7 +179,7 @@ qx.Class.define("qx.html.Flash",
         }
       }
 
-      if (key == "$$widget" || key.indexOf("$$") === 0) {
+      if (key.indexOf("$$") === 0) {
         this.base(arguments, key, value);
       }
       else if (this.__flash) {

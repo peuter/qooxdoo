@@ -8,8 +8,7 @@
      2004-2009 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -38,6 +37,9 @@
  *
  * you probably need to change the implementation of your delegate to configure
  * the {@link qx.io.request.Xhr} request.
+ * 
+ * This class only needs to be disposed if you want to abort any current I/O
+ * request
  *
  */
 qx.Class.define("qx.data.store.Json",

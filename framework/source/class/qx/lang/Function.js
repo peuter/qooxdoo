@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -184,10 +183,11 @@ qx.Bootstrap.define("qx.lang.Function",
         {
           if (qx.core.Object && options.self && qx.Bootstrap.isObject(options.self) && options.self.isDisposed && qx.Bootstrap.isFunction(options.self.isDisposed))
           {
-            qx.core.Assert && qx.core.Assert.assertFalse(
-              options.self.isDisposed(),
-              "Trying to call a bound function with a disposed object as context: " + options.self.toString() + " :: " + qx.lang.Function.getName(func)
-            );
+            if (options.self.isDisposed()) {
+              qx.core.Assert && qx.core.Assert.fail(
+                "Trying to call a bound function with a disposed object as context: " + options.self.toString() + " :: " + qx.lang.Function.getName(func)
+              );
+            }
           }
         }
 

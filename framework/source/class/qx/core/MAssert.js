@@ -8,8 +8,7 @@
      2007-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -263,6 +262,18 @@ qx.Mixin.define("qx.core.MAssert",
      */
     assertInArray : function(value, array, msg) {
       qx.core.Assert.assertInArray(value, array, msg);
+    },
+
+
+    /**
+     * Assert that the value is NOT an item in the given array
+     *
+     * @param value {var} Value to check
+     * @param array {Array} List of values
+     * @param msg {String} Message to be shown if the assertion fails
+     */
+    assertNotInArray : function(value, array, msg) {
+      qx.core.Assert.assertNotInArray(value, array, msg);
     },
 
 

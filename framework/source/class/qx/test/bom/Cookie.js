@@ -8,8 +8,7 @@
      2007-2009 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -75,6 +74,34 @@ qx.Class.define("qx.test.bom.Cookie",
       result2 = qx.bom.Cookie.get(key2);
       this.assertNull(result1, "Remove value (one)");
       this.assertNull(result2, "Remove value (tow)");
+    },
+
+    testEncoding : function() {
+      var special = '~!@#$%^&*(){}[]=:/,;?+\'"\\';
+      var utf = 'äëíöü';
+
+      qx.bom.Cookie.set('special', special);
+      qx.bom.Cookie.set('utf', utf);
+
+      var escapedSpecial = escape(special);
+      var escapedUtf = escape(utf);
+
+      var expectedSpecial = unescape(escapedSpecial);
+      var resultSpecial = qx.bom.Cookie.get('special');
+
+      var expectedUtf = unescape(escapedUtf);
+      var resultUtf = qx.bom.Cookie.get('utf');
+
+      var escapedCookie = [ 'manualEscaped', "=", escapedUtf ];
+      document.cookie = escapedCookie.join("");
+
+      this.assertNull(qx.bom.Cookie.get('manualEscaped'));
+
+      this.assertTrue((decodeURIComponent(escapedSpecial) == unescape(escapedSpecial)), 'There is some incompatible characters.');
+      // this.assertTrue((decodeURIComponent(escapedUtf) == unescape(escapedUtf)), 'There is some incompatible characters.');
+
+      this.assertEquals(expectedSpecial, resultSpecial, 'There is some incompatible characters.');
+      this.assertEquals(expectedUtf, resultUtf, 'There is some incompatible characters.');
     }
   }
 });

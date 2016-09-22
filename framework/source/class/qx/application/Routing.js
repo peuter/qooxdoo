@@ -8,8 +8,7 @@
      2004-2012 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -80,8 +79,11 @@
  * </pre>
  *
  * This example defines different routes to handle navigation events.
+ * 
+ * Note this class must be disposed after use
  */
 qx.Bootstrap.define("qx.application.Routing", {
+	implement: [ qx.core.IDisposable ],
 
   construct : function()
   {

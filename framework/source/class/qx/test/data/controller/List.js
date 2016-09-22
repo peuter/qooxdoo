@@ -8,8 +8,7 @@
      2004-2009 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -1131,7 +1130,7 @@ qx.Class.define("qx.test.data.controller.List",
     testScrollBySelection : function()
     {
       this.__setUpString();
-      // set a smal hight (list hast to scroll)
+      // set a smal hight (list has to scroll)
       this.__list.setHeight(40);
       this.getRoot().add(this.__list);
       var selectables = this.__list.getSelectables();
@@ -1150,7 +1149,7 @@ qx.Class.define("qx.test.data.controller.List",
     testScrollBySelectionMulti : function()
     {
       this.__setUpString();
-      // set a smal hight (list hast to scroll)
+      // set a smal hight (list has to scroll)
       this.__list.setHeight(40);
       this.__list.setSelectionMode("multi");
       this.getRoot().add(this.__list);

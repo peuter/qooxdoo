@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -297,19 +296,19 @@ qx.Class.define("qx.bom.Flash",
         if (attributes.id)
         {
           element.innerHTML = '<object id="' + attributes.id +
-            '" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" $$widget="' + attributes.$$widget + '">' +
+            '" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000">' +
             paramsStr + '</object>';
           delete attributes.id;
         } else {
-          element.innerHTML = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" $$widget="' +
-            attributes.$$widget + '">' + paramsStr + '</object>';
+          element.innerHTML = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000">' + paramsStr + '</object>';
         }
 
         // Apply attributes
         for (var name in attributes) {
           // IE doesn't like dollar signs in attribute names.
-          // Setting the attribute using innerHTML above works fine, though...
-          if (name != "$$widget") {
+          if (name.substring(0, 1) == "$") {
+          	element.firstChild[name] = attributes[name];
+          } else {
             element.firstChild.setAttribute(name, attributes[name]);
           }
         }

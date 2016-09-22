@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -659,25 +658,6 @@ qx.Class.define("qx.test.data.marshal.Json",
 
       // check the model
       this.assertEquals(qxObject, model.getA().getB(), "wrong qx object!");
-      model.dispose();
-    },
-
-
-    testDeepModelDispose : function() {
-      var data = {a: [{}, {}], o: {}, n: null};
-      var model = qx.data.marshal.Json.createModel(data);
-      // get all references
-      var o = model.getO();
-      var a = model.getA();
-      var c0 = model.getA().getItem(0);
-      var c1 = model.getA().getItem(1);
-      // dispose the model
-      model.dispose();
-      this.assertTrue(model.isDisposed(), "model");
-      this.assertTrue(o.isDisposed(), "object");
-      this.assertTrue(a.isDisposed(), "array");
-      this.assertTrue(c0.isDisposed(), "array item");
-      this.assertTrue(c1.isDisposed(), "array item");
       model.dispose();
     },
 

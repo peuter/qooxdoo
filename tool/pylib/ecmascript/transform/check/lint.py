@@ -10,8 +10,7 @@
 #    2006-2012 1&1 Internet AG, Germany, http://www.1und1.de
 #
 #  License:
-#    LGPL: http://www.gnu.org/licenses/lgpl.html
-#    EPL: http://www.eclipse.org/org/documents/epl-v10.php
+#    MIT: https://opensource.org/licenses/MIT
 #    See the LICENSE file in the project's top-level directory for details.
 #
 #  Authors:
@@ -334,8 +333,13 @@ class LintChecker(treeutil.NodeVisitor):
                         function_privs = self.function_uses_local_privs(val.children[0])
                         for priv, node in function_privs:
                             if priv not in private_keys:
-                                issue = warn("Using an undeclared private class feature: '%s'" % priv, self.file_name, node)
-                                self.issues.append(issue)
+                                ok = False
+                                at_hints = get_at_hints(node)
+                                if at_hints:
+                                    ok = self.is_name_lint_filtered(priv, at_hints, "ignoreUndeclaredPrivates")
+                                if not ok:
+                                    issue = warn("Using an undeclared private class feature: '%s'" % priv, self.file_name, node)
+                                    self.issues.append(issue)
 
 
     ##

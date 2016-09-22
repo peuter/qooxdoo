@@ -9,8 +9,7 @@
      2004-2010 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -116,7 +115,9 @@ qx.Class.define("playground.view.RiaPlayArea",
       qx.ui.core.queue.Manager.flush();
 
       var playRootEl = this._dummy.getContentElement().getDomElement();
-      this._playRoot = new qx.ui.root.Inline(playRootEl);
+      var innerRoot = document.createElement("div");
+      playRootEl.appendChild(innerRoot);
+      this._playRoot = new qx.ui.root.Inline(innerRoot);
       this._playRoot._setLayout(new qx.ui.layout.Canvas());
 
       var self = this;

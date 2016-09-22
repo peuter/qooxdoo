@@ -8,8 +8,7 @@
      2004-2009 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -316,6 +315,41 @@ qx.Class.define("qx.test.ui.core.Widget",
 
       w._releaseChildControl("xyz");
       this.assertUndefined(w._getCreatedChildControls()["xyz"]);
+
+      child.dispose();
+      w.dispose();
+      qx.Class.undefine("qx.test.ui.core.W");
+    },
+
+    testChildGetSubcontrolId : function() {
+      qx.Class.define("qx.test.ui.core.W", {
+        extend : qx.ui.core.Widget,
+
+        members : {
+          _createChildControlImpl : function(id, hash)
+          {
+            var control;
+      
+            switch(id)
+            {
+              case "xyz":
+                control = new qx.ui.core.Widget();
+                break;
+      
+            }
+      
+            return control || this.base(arguments, id);
+          }
+        }
+      });
+
+      var w = new qx.test.ui.core.W();
+
+      var child = w.getChildControl("xyz");
+      this.flush();
+      this.assertEquals("xyz", child.getSubcontrolId());
+      
+      this.assertNull(w.getSubcontrolId());
 
       child.dispose();
       w.dispose();

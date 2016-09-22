@@ -8,8 +8,7 @@
      2004-2008 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -22,11 +21,15 @@
  * A generic singleton that fires an "interval" event all 100 milliseconds. It
  * can be used whenever one needs to run code periodically. The main purpose of
  * this class is reduce the number of timers.
+ * 
+ * NOTE: Instances of this class must be disposed of after use
+ *
  */
 
 qx.Class.define("qx.event.Idle",
 {
   extend : qx.core.Object,
+  implement : [ qx.core.IDisposable ],
   type : "singleton",
 
   construct : function()

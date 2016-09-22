@@ -8,8 +8,7 @@
      2004-2011 1&1 Internet AG, Germany, http://www.1und1.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -26,12 +25,15 @@
  * without blocking the user interface. A 'worker' is just another script
  * file that will be loaded and executed in the background.
  *
+ * NOTE: Instances of this class must be disposed of after use
+ *
  * For more information see:
  * http://www.w3.org/TR/workers/
  */
 qx.Class.define("qx.bom.WebWorker",
 {
   extend : qx.core.Object,
+  implement: [ qx.core.IDisposable ],
 
 
   /**
