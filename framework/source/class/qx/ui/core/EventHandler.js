@@ -224,20 +224,22 @@ qx.Class.define("qx.ui.core.EventHandler",
         var domRelatedTarget = domEvent.getRelatedTarget();
 
         var widgetRelatedTarget = qx.ui.core.Widget.getWidgetByElement(domRelatedTarget);
-        while (widgetRelatedTarget && widgetRelatedTarget.isAnonymous()) {
-          widgetRelatedTarget = widgetRelatedTarget.getLayoutParent();
-        }
-
-        if (widgetRelatedTarget)
-        {
-          // Correcting target for focus events
-          if (this.__focusEvents[domEvent.getType()]) {
-            widgetRelatedTarget = widgetRelatedTarget.getFocusTarget();
+        if (widgetRelatedTarget instanceof qx.ui.core.Widget) {
+          while (widgetRelatedTarget && widgetRelatedTarget.isAnonymous()) {
+            widgetRelatedTarget = widgetRelatedTarget.getLayoutParent();
           }
 
-          // If target and related target are identical ignore the event
-          if (widgetRelatedTarget === widgetTarget) {
-            return;
+          if (widgetRelatedTarget)
+          {
+            // Correcting target for focus events
+            if (this.__focusEvents[domEvent.getType()]) {
+              widgetRelatedTarget = widgetRelatedTarget.getFocusTarget();
+            }
+
+            // If target and related target are identical ignore the event
+            if (widgetRelatedTarget === widgetTarget) {
+              return;
+            }
           }
         }
       }
