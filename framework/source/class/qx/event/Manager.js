@@ -629,7 +629,7 @@ qx.Class.define("qx.event.Manager",
      */
     removeListener : function(target, type, listener, self, capture)
     {
-      if (qx.core.Environment.get("qx.debug"))
+      if (qx.core.Environment.get("qx.debug") && !(target instanceof svg.core.Element))
       {
         var msg = "Failed to remove event listener for type '" + type + "'" +
           " from the target '" + target.classname + "': ";
@@ -824,7 +824,7 @@ qx.Class.define("qx.event.Manager",
         return;
       }
 
-      if (qx.core.Environment.get("qx.debug"))
+      if (qx.core.Environment.get("qx.debug") && !(target instanceof svg.core.Element))
       {
         qx.log.Logger.warn(
           this,
