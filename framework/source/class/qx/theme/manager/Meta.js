@@ -95,6 +95,11 @@ qx.Class.define("qx.theme.manager.Meta",
 
       // fire change event only if at least one theme manager changed
       if (colorChanged || decorationChanged || fontChanged || iconChanged || appearanceChanged) {
+
+        // Flush the queue once to be able to query the visibility of
+        // a widget quickly.
+        qx.ui.core.queue.Manager.flush();
+
         this.fireEvent("changeTheme");
       }
 
@@ -118,6 +123,10 @@ qx.Class.define("qx.theme.manager.Meta",
         // re-create decorator rules with changed color theme
         qx.theme.manager.Decoration.getInstance().refresh();
       }
+
+      // Flush the queue once to be able to query the visibility of
+      // a widget quickly.
+      qx.ui.core.queue.Manager.flush();
 
       this.fireEvent("changeTheme");
     },
