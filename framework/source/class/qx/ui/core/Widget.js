@@ -3540,14 +3540,14 @@ qx.Class.define("qx.ui.core.Widget",
 
 
     _checkThemeRefreshNeeded : qx.core.Environment.select("qx.dyntheme", {
-      true : function() {
+      "true" : function() {
         if (this.__themeRefreshNeeded) {
           this.__themeRefreshNeeded = false;
           this._onChangeTheme();
         }
       },
 
-      false: null
+      "false": null
     }),
 
 
