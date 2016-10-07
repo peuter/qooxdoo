@@ -603,7 +603,7 @@ qx.Class.define("qx.event.Manager",
         return;
       }
 
-      if (qx.core.Environment.get("qx.debug"))
+      if (qx.core.Environment.get("qx.debug") && !(target instanceof svg.core.Element))
       {
         qx.log.Logger.warn(
           this,
