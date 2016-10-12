@@ -249,7 +249,7 @@ qx.Bootstrap.define("qx.Annotation", {
      * Returns a list of property names that implement a given annotation.
      * @param clazz {Class} the class to inspect
      * @param annotation {String|Object} annotation to look for
-     * return {String[]} the property names, never null
+     * @return {String[]} the property names, never null
      */
     getPropertiesByAnnotation : function(clazz, annotation) {
       var properties = [];
