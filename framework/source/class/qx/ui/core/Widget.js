@@ -1070,7 +1070,9 @@ qx.Class.define("qx.ui.core.Widget",
           var decoratorPadding = {left: 0, right: 0, top: 0, bottom: 0};
           if (decorator) {
             decorator = qx.theme.manager.Decoration.getInstance().resolve(decorator);
-            decoratorPadding = decorator.getPadding();
+            if (decorator) {
+              decoratorPadding = decorator.getPadding();
+            }
           }
 
           var padding = {
@@ -1416,32 +1418,34 @@ qx.Class.define("qx.ui.core.Widget",
       var left = this.getPaddingLeft();
       if (this.getDecorator()) {
         var decorator = qx.theme.manager.Decoration.getInstance().resolve(this.getDecorator());
-        var inset = decorator.getInsets();
+        if (decorator) {
+          var inset = decorator.getInsets();
 
-        if (qx.core.Environment.get("qx.debug"))
-        {
-          this.assertNumber(
-            inset.top,
-            "Invalid top decorator inset detected: " + inset.top
-          );
-          this.assertNumber(
-            inset.right,
-            "Invalid right decorator inset detected: " + inset.right
-          );
-          this.assertNumber(
-            inset.bottom,
-            "Invalid bottom decorator inset detected: " + inset.bottom
-          );
-          this.assertNumber(
-            inset.left,
-            "Invalid left decorator inset detected: " + inset.left
-          );
+          if (qx.core.Environment.get("qx.debug"))
+          {
+            this.assertNumber(
+              inset.top,
+              "Invalid top decorator inset detected: " + inset.top
+            );
+            this.assertNumber(
+              inset.right,
+              "Invalid right decorator inset detected: " + inset.right
+            );
+            this.assertNumber(
+              inset.bottom,
+              "Invalid bottom decorator inset detected: " + inset.bottom
+            );
+            this.assertNumber(
+              inset.left,
+              "Invalid left decorator inset detected: " + inset.left
+            );
+          }
+
+          top += inset.top;
+          right += inset.right;
+          bottom += inset.bottom;
+          left += inset.left;
         }
-
-        top += inset.top;
-        right += inset.right;
-        bottom += inset.bottom;
-        left += inset.left;
       }
 
       return {
@@ -2403,13 +2407,13 @@ qx.Class.define("qx.ui.core.Widget",
     */
 
     // overridden
-    _onChangeTheme : function() {
+    _onChangeTheme : function(force) {
       if (this.isDisposed()) {
         return;
       }
 
       // Only act if we're visible, skip the flush
-      if (this.isSeeable(true)) {
+      if (force === true || this.isSeeable(true)) {
 
         this.base(arguments);
 
@@ -3543,7 +3547,7 @@ qx.Class.define("qx.ui.core.Widget",
       "true" : function() {
         if (this.__themeRefreshNeeded) {
           this.__themeRefreshNeeded = false;
-          this._onChangeTheme();
+          this._onChangeTheme(true);
         }
       },
 
