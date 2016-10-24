@@ -22,13 +22,13 @@
  * https://www.w3.org/TR/requestidlecallback/
  *
  * Here is a sample usage:
- * <pre class='javascript'>var clb = function(deadline) {
+ * <pre class='javascript'>var cb = function(deadline) {
  *   while (deadline.timeRemaining() > 0) {
  *     // ... do some last tasks
  *   }
  * };
  *
- * qx.bom.IdleCallback.request(clb, this);
+ * qx.bom.IdleCallback.request(cb, this);
  * </pre>
  */
 qx.Bootstrap.define("qx.bom.IdleCallback",
@@ -38,12 +38,16 @@ qx.Bootstrap.define("qx.bom.IdleCallback",
   statics :
   {
     /**
-     * The default time in ms the timeout fallback implementation uses.
+     * The default time in ms the setTimeout() fallback implementation uses. There is no
+     * way to detect if the browser has some spare IDLE time, it defaults to zero - meaning
+     * that the callback will be called as soon as possible.
      */
     TIMEOUT : 0,
 
     /**
-     * The default remaining time in ms the timeout fallback implementation uses.
+     * The default remaining time in ms the timeout fallback implementation uses. Since we
+     * cannot know how much time is available, this is a hard coded time bucket available
+     * for actions done in the callback.
      */
     REMAINING : 250,
 
@@ -60,25 +64,23 @@ qx.Bootstrap.define("qx.bom.IdleCallback",
      *   in case of the emulation.
      * @param context {var} The context of the callback.
      * @param timeout {Number} Timeout in milliseconds.
-     * @return {Number} The id of the request.
+     * @return {Number} Handle for that request
      */
     request : function(callback, context, timeout) {
-      var req = qx.core.Environment.get("client.idle");
-
-      var clb = function(deadline) {
+      var cb = function(deadline) {
         return callback.call(context, deadline);
       };
 
-      if (req) {
-        return window.requestIdleCallback(clb, timeout);
+      if (qx.core.Environment.get("client.idle")) {
+        return window.requestIdleCallback(cb, timeout);
       }
       else {
 
         var deadline = {
-          started : +(new Date()),
+          started : (new Date()).getTime(),
 
           timeRemaining : function() {
-            var now = +new Date();
+            var now = (new Date()).getTime();
             return Math.max(qx.bom.IdleCallback.REMAINING - (now - this.started), 0);
           },
 
@@ -88,8 +90,23 @@ qx.Bootstrap.define("qx.bom.IdleCallback",
         // make sure to use an indirection because setTimeout passes a
         // number as first argument as well
         return window.setTimeout(function() {
-          clb(deadline);
+          cb(deadline);
         }, qx.bom.IdleCallback.TIMEOUT);
+      }
+    },
+
+    /**
+     * Cancel a requested IDLE callback.
+     *
+     * @param handle {Number} Handle acquired by <code>qx.bom.IdleCallback.request()</code>.
+     */
+    cancel : function(handle)
+    {
+      if (qx.core.Environment.get("client.idle")) {
+        window.cancelIdleCallback(handle);
+      }
+      else {
+        window.clearTimeout(handle);
       }
     }
   }
