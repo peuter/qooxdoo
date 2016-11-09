@@ -80,7 +80,7 @@ qx.Bootstrap.define("qx.bom.AnimationFrame",
     startSequence : function(duration) {
       this.__canceled = false;
 
-      var start = +(new Date());
+      var start = (window.performance && window.performance.now) ? (performance.now() + qx.bom.AnimationFrame.__start) : Date.now();
       var cb = function(time) {
         if (this.__canceled) {
           this.id = null;
