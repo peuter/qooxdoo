@@ -76,6 +76,7 @@ qx.Bootstrap.define("qx.bom.AnimationFrame",
      * soon as the given duration is over.
      *
      * @param duration {Number} The duration the sequence should take.
+     * @ignore(performance.*)
      */
     startSequence : function(duration) {
       this.__canceled = false;
