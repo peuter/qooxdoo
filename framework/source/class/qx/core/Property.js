@@ -574,7 +574,7 @@ qx.Bootstrap.define("qx.core.Property",
         return qx.core.Property.executeOptimizedGetter(this, clazz, name, "get");
       };
       members[method.get[name]].$$install = function(value) {
-        qx.core.Property.installOptimizedGetter(clazz, name, "get", arguments);
+        qx.core.Property.__installOptimizedGetter(clazz, name, "get", arguments);
       };
 
       var setName = method.set[name] = "set" + upname;
@@ -583,16 +583,23 @@ qx.Bootstrap.define("qx.core.Property",
           "return this." + setName + ".apply(this, arguments);");
       method.setAsync[name] = "set" + upname + "Async";
       if (config.async) {
-      members[setName + "Async"] = new Function(
+      	if (qx.core.Environment.get("qx.debug")) {
+      		if (members.hasOwnProperty(setName + "Async")) {
+      			this.error("Asynchronous property " + clazz.classname +"." + name + " is replacing " + setName + "Async() method in same class");
+      		} else if (members[setName + "Async"] !== undefined) {
+      			this.warn("Asynchronous property " + clazz.classname +"." + name + " is overriding " + setName + "Async() method");
+      		}
+      	}
+        members[setName + "Async"] = new Function(
             "this." + setName + ".$$install && this." + setName + ".$$install.call(this);" +
-          "return this." + setName + "Async.apply(this, arguments);");
+            "return this." + setName + "Async.apply(this, arguments);");
       }
       method.setImpl[name] = "$$set" + upname + "Impl";
       members[setName].$$install = function() {
-        qx.core.Property.installOptimizedSetter(clazz, name, "set");
-        qx.core.Property.installOptimizedSetter(clazz, name, "setImpl");
+        qx.core.Property.__installOptimizedSetter(clazz, name, "set");
+        qx.core.Property.__installOptimizedSetter(clazz, name, "setImpl");
         if (config.async) {
-          qx.core.Property.installOptimizedSetter(clazz, name, "setAsync");
+          qx.core.Property.__installOptimizedSetter(clazz, name, "setAsync");
         }
       };
 
@@ -601,7 +608,7 @@ qx.Bootstrap.define("qx.core.Property",
         return qx.core.Property.executeOptimizedSetter(this, clazz, name, "reset");
       };
       members[method.reset[name]].$$install = function() {
-        qx.core.Property.installOptimizedSetter(clazz, name, "reset");
+        qx.core.Property.__installOptimizedSetter(clazz, name, "reset");
       };
 
       if (config.inheritable || config.apply || config.event || config.deferredInit)
@@ -815,7 +822,7 @@ qx.Bootstrap.define("qx.core.Property",
      * @param name {String} name of the property
      * @param variant {String} Method variant.
      */
-    installOptimizedGetter : function(clazz, name, variant)
+    __installOptimizedGetter : function(clazz, name, variant)
     {
       var code = this.__compileGetter(clazz, name, variant);
       this.__installFunctionFromCode(clazz, name, variant, code);
@@ -919,7 +926,7 @@ qx.Bootstrap.define("qx.core.Property",
      * @param variant {String} Method variant.
      * @return {var} Return value of the generated function
      */
-    installOptimizedSetter : function(clazz, name, variant)
+    __installOptimizedSetter : function(clazz, name, variant)
     {
     	var code = this.__compileSetter(clazz, name, variant);
       return this.__installFunctionFromCode(clazz, name, variant, code);
