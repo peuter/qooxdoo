@@ -52,7 +52,7 @@ qx.Class.define("qx.test.Promise", {
      */
     testPropertySetValueAsPromise1: function() {
       var t = this;
-      var Clazz = qx.Class.define(null, {
+      var Clazz = qx.Class.define("testPropertySetValueAsPromise1.Clazz", {
         extend: qx.core.Object,
         properties: {
           alpha: {
@@ -82,7 +82,7 @@ qx.Class.define("qx.test.Promise", {
      */
     testPropertySetValueAsPromise2: function() {
       var t = this;
-      var Clazz = qx.Class.define(null, {
+      var Clazz = qx.Class.define("testPropertySetValueAsPromise2.Clazz", {
         extend: qx.core.Object,
         properties: {
           alpha: {
@@ -113,7 +113,7 @@ qx.Class.define("qx.test.Promise", {
     testPropertySetValueAsyncApply1: function() {
       var t = this;
       var p;
-      var Clazz = qx.Class.define(null, {
+      var Clazz = qx.Class.define("testPropertySetValueAsyncApply1.Clazz", {
         extend: qx.core.Object,
         properties: {
           alpha: {
@@ -158,7 +158,7 @@ qx.Class.define("qx.test.Promise", {
      */
     testPropertySetValueAsyncApply2: function() {
       var t = this;
-      var Clazz = qx.Class.define(null, {
+      var Clazz = qx.Class.define("testPropertySetValueAsyncApply2.Clazz", {
         extend: qx.core.Object,
         properties: {
           alpha: {
@@ -209,7 +209,7 @@ qx.Class.define("qx.test.Promise", {
      */
     testPropertySetValueAsyncApply3: function() {
       var t = this;
-      var Clazz = qx.Class.define(null, {
+      var Clazz = qx.Class.define("testPropertySetValueAsyncApply3.Clazz", {
         extend: qx.core.Object,
         properties: {
           alpha: {
@@ -223,6 +223,125 @@ qx.Class.define("qx.test.Promise", {
       var p = qx.Promise.resolve("hello");
       obj.setAlpha(p);
       this.assertEquals(p, obj.getAlpha());
+    },
+    
+    testBinding: function() {
+      var t = this;
+      var AsyncClazz = qx.Class.define("testBinding.AsyncClazz", {
+        extend: qx.core.Object,
+        properties: {
+          alpha: {
+            init: null,
+            nullable: true,
+            async: true,
+            event: "changeAlpha"
+          }
+        },
+        
+        members: {
+          _applyAlpha: function(value, oldValue) {
+            return new qx.Promise(function(resolve) {
+              setTimeout(resolve, 250);
+            });
+          }
+        }
+      }); 
+      var SyncClazz = qx.Class.define("testBinding.SyncClazz", {
+        extend: qx.core.Object,
+        properties: {
+          bravo: {
+            init: null,
+            nullable: true,
+            event: "changeBravo"
+          }
+        }
+      }); 
+      
+      /*
+       * Test binding an async property to a "normal" sync property 
+       */
+      var asyncToSync = new qx.Promise(function(resolve) {
+	      var asyncObj = new AsyncClazz();
+	      var syncObj = new SyncClazz();
+	      
+	      var p1 = new qx.Promise();
+        asyncObj.addListenerOnce("changeAlphaAsync", function(evt) {
+        	var data = evt.getData();
+        	this.assertTrue(data instanceof qx.Promise);
+        	p1.resolve();
+        }, this);
+	      
+	      var p2 = new qx.Promise();
+	      var bravoEvents = 0;
+        var id = syncObj.addListener("changeBravo", function(evt) {
+        	bravoEvents++;
+        	this.assertTrue(bravoEvents <= 2);
+        	var data = evt.getData();
+        	
+        	// First event is .bind() setting the initial value
+        	if (bravoEvents == 1) {
+        		this.assertNull(data);
+        		
+        	// Second event was caused by asyncObj.setAlphaAsync()
+        	} else if (bravoEvents == 2) {
+	        	this.assertEquals("zyx", data);
+	        	syncObj.removeListenerById(id);
+	        	p2.resolve();
+        	}
+        }, this);
+	      
+        asyncObj.getAlphaAsync();
+	      asyncObj.bind("alphaAsync", syncObj, "bravo");
+	      asyncObj.setAlphaAsync("zyx");
+	      qx.Promise.all([p1, p2]).then(function() {
+		      var p3 = new qx.Promise();
+	        syncObj.addListenerOnce("changeBravo", function(evt) {
+	        	var data = evt.getData();
+	        	this.assertEquals("wvu", data);
+	        	p3.resolve();
+	        }, this);
+		      
+		      asyncObj.setAlphaAsync("wvu");
+		      p3.then(function() {
+		      	this.resume();
+		      }, this);
+		      
+	      }, this);
+      }, this);
+      
+      /*
+       * Test binding a "normal" sync property to an async property 
+       */
+      asyncToSync.then(function() {
+	      var asyncObj = new AsyncClazz();
+	      var syncObj = new SyncClazz();
+	      
+	      var p1 = new qx.Promise();
+	      asyncObj.addListenerOnce("changeAlphaAsync", function(evt) {
+	      	var data = evt.getData();
+	      	this.assertEquals("def", data);
+	      	p1.resolve();
+	      }, this);
+      	
+	      syncObj.bind("bravo", asyncObj, "alphaAsync");
+	      syncObj.setBravo("def");
+	      
+	      p1.then(function() {
+		      var p2 = new qx.Promise();
+		      asyncObj.addListenerOnce("changeAlphaAsync", function(evt) {
+		      	var data = evt.getData();
+		      	this.assertEquals("ghi", data);
+		      	p2.resolve();
+		      }, this);
+		      
+		      syncObj.setBravo("ghi");
+		      return p2.then(function() {
+		      	this.resume();
+		      }, this);
+	      }, this);
+      }, this);
+      
+      this.wait(1000);
     },
     
     /**

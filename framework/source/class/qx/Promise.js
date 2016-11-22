@@ -60,9 +60,14 @@ qx.Class.define("qx.Promise", {
   extend: qx.core.Object,
   
   /**
-   * Constructor
+   * Constructor.
    * 
-   * @param fn {Function} the promise function
+   * The promise function is called with two parameters, functions which are to be called
+   * when the promise is fulfilled or rejected respectively.  If you do not provide any
+   * parameters, the promise can be externally resolved or rejected by calling the
+   * <code>resolve()</code> or <code>reject()</code> methods.
+   * 
+   * @param fn {Function} the promise function called with <code>(resolve, reject)</code>
    * @param context {Object?} optional context for all callbacks
    */
   construct: function(fn, context) {
@@ -70,11 +75,13 @@ qx.Class.define("qx.Promise", {
     qx.Promise.__initialize();
     if (fn instanceof qx.Promise.Bluebird) {
       this.__p = fn;
-    } else {
+    } else if (fn) {
       if (context !== undefined && context !== null) {
         fn = fn.bind(context);
       }
       this.__p = new qx.Promise.Bluebird(fn);
+    } else {
+    	this.__p = new qx.Promise.Bluebird(this.__externalPromise.bind(this));
     }
     qx.core.Assert.assertTrue(!this.__p.$$qxPromise);
     this.__p.$$qxPromise = this;
@@ -95,6 +102,7 @@ qx.Class.define("qx.Promise", {
     /** The Promise */
     __p: null,
     
+
     
     /* *********************************************************************************
      * 
@@ -341,6 +349,39 @@ qx.Class.define("qx.Promise", {
      */
     reduce: function(iterable, reducer, initialValue) {
       return this._callIterableMethod('reduce', arguments);
+    },
+
+    /**
+     * External promise handler
+     */
+    __externalPromise: function(resolve, reject) {
+    	this.__external = { resolve: resolve, reject: reject, complete: false };
+    },
+    
+    /**
+     * Returns the data stored by __externalPromise, throws an exception once processed
+     */
+    __getPendingExternal: function() {
+    	if (!this.__external)
+    		throw new Error("Promise cannot be resolved externally");
+    	if (this.__external.complete)
+    		throw new Error("Promise has already been resolved or rejected");
+    	this.__external.complete = true;
+    	return this.__external;
+    },
+    
+    /**
+     * Resolves an external promise
+     */
+    resolve: function(value) {
+    	this.__getPendingExternal().resolve(value);
+    },
+
+    /**
+     * Rejects an external promise
+     */
+    reject: function(reason) {
+    	this.__getPendingExternal().reject(reason);
     },
 
     

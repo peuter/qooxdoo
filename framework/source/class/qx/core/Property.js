@@ -268,6 +268,7 @@ qx.Bootstrap.define("qx.core.Property",
     $$method :
     {
       get          : {},
+      getAsync     : {},
       set          : {},
       setImpl      : {},
       setAsync     : {},
@@ -569,12 +570,27 @@ qx.Bootstrap.define("qx.core.Property",
       store.inherit[name] = "$$inherit_" + name;
       store.useinit[name] = "$$useinit_" + name;
 
-      method.get[name] = "get" + upname;
-      members[method.get[name]] = function() {
-        return qx.core.Property.executeOptimizedGetter(this, clazz, name, "get");
-      };
+      var getName = method.get[name] = "get" + upname;
+      members[method.get[name]] = new Function(
+          "this." + getName + ".$$install && this." + getName + ".$$install.call(this);" +
+          "return this." + getName + ".apply(this, arguments);"); 
+      if (config.async) {
+      	if (qx.core.Environment.get("qx.debug")) {
+      		if (members.hasOwnProperty(getName + "Async")) {
+      			this.error("Asynchronous property " + clazz.classname +"." + name + " is replacing " + getName + "Async() method in same class");
+      		} else if (members[getName + "Async"] !== undefined) {
+      			this.warn("Asynchronous property " + clazz.classname +"." + name + " is overriding " + getName + "Async() method");
+      		}
+      	}
+	      method.getAsync[name] = getName + "Async";
+	      members[method.getAsync[name]] = new Function(
+	          "this." + getName + ".$$install && this." + getName + ".$$install.call(this);" +
+	          "return this." + getName + "Async.apply(this, arguments);");
+      }
       members[method.get[name]].$$install = function(value) {
         qx.core.Property.__installOptimizedGetter(clazz, name, "get", arguments);
+        if (config.async)
+        	qx.core.Property.__installOptimizedGetter(clazz, name, "getAsync", arguments);
       };
 
       var setName = method.set[name] = "set" + upname;
@@ -843,6 +859,11 @@ qx.Bootstrap.define("qx.core.Property",
       var config = clazz.$$properties[name];
       var code = [];
       var store = this.$$store;
+      
+      if (variant == "getAsync") {
+      	code.push("return qx.Promise.resolve(this." + this.$$method.get[name] + "());");
+      	return code;
+      }
 
       code.push('if(this.', store.runtime[name], '!==undefined)');
       code.push('return this.', store.runtime[name], ';');
@@ -1745,6 +1766,11 @@ qx.Bootstrap.define("qx.core.Property",
             "var reg=qx.event.Registration;",
             "if(reg.hasListener(this, '", config.event, "'))",
               "reg.fireEvent(this, '", config.event, "', qx.event.type.Data, [computed, old]", ");");
+        if (config.async) {
+          code.push(
+              "if(reg.hasListener(this, '", config.event, "Async'))",
+                "reg.fireEvent(this, '", config.event, "Async', qx.event.type.Data, [qx.Promise.resolve(computed), old]", ");");
+        }
       }
       
       // Emit code to update the inherited values of child objects
