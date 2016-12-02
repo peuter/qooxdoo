@@ -102,6 +102,9 @@ qx.Class.define("qx.Promise", {
     /** The Promise */
     __p: null,
     
+    /** Stores data for completing the promise externally */
+    __external: null,
+    
 
     
     /* *********************************************************************************
@@ -362,10 +365,12 @@ qx.Class.define("qx.Promise", {
      * Returns the data stored by __externalPromise, throws an exception once processed
      */
     __getPendingExternal: function() {
-    	if (!this.__external)
+    	if (!this.__external) {
     		throw new Error("Promise cannot be resolved externally");
-    	if (this.__external.complete)
+    	}
+    	if (this.__external.complete) {
     		throw new Error("Promise has already been resolved or rejected");
+    	}
     	this.__external.complete = true;
     	return this.__external;
     },
@@ -837,8 +842,9 @@ qx.Class.define("qx.Promise", {
      */
     __bindArgs: function(args, minArgs) {
       args = qx.lang.Array.fromArguments(args);
-      if (minArgs === undefined)
+      if (minArgs === undefined) {
       	minArgs = 1;
+      }
       if (args.length > minArgs) {
         var context = args[args.length - 1];
         if (context instanceof qx.core.Object) {

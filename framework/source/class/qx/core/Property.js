@@ -565,6 +565,10 @@ qx.Bootstrap.define("qx.core.Property",
       	// Exclude qx.data.model.* because that's from marshalling and will cause conflicts to be reported
       	if (clazz.classname && !clazz.classname.match(/^qx.data.model/)) {
 		      var allNames = [ members.get[name], members.set[name], members.reset[name], "setRuntime" + upname, "resetRuntime" + upname ];
+		      if (config.async) {
+		      	allNames.push(members.get[name] + "Async");
+		      	allNames.push(members.set[name] + "Async");
+		      }
 		      if (config.inheritable || config.apply || config.event || config.deferredInit) {
 		      	allNames.push("init" + upname);
 		      }
@@ -619,8 +623,9 @@ qx.Bootstrap.define("qx.core.Property",
       }
       members[method.get[name]].$$install = function(value) {
         qx.core.Property.__installOptimizedGetter(clazz, name, "get", arguments);
-        if (config.async)
+        if (config.async) {
         	qx.core.Property.__installOptimizedGetter(clazz, name, "getAsync", arguments);
+        }
       };
 
       var setName = method.set[name] = "set" + upname;

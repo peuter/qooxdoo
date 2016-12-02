@@ -213,10 +213,11 @@ qx.Class.define("qx.event.type.Event",
      * @param promise {qx.Promise} the promise to add
      */
     addPromise: function(promise) {
-    	if (this._promises === null)
+    	if (this._promises === null) {
     		this._promises = [promise];
-    	else
+    	} else {
     		this._promises.push(promise);
+    	}
     },
     
     
@@ -235,10 +236,12 @@ qx.Class.define("qx.event.type.Event",
      * be fulfilled when the promises added via {@link addPromise} are also fulfilled
      */
     promise: function() {
-    	if (this.getDefaultPrevented())
+    	if (this.getDefaultPrevented()) {
     		return qx.Promise.reject();
-    	if (this._promises === null)
+    	}
+    	if (this._promises === null) {
     		return qx.Promise.resolve(true);
+    	}
     	return qx.Promise.all(this._promises);
     },
 

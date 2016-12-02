@@ -392,8 +392,9 @@ qx.Class.define("qx.event.Registration",
     fireNonBubblingEvent : function(target, type, clazz, args)
     {
       var evt = this.__fireNonBubblingEvent.apply(this, arguments);
-      if (evt === null)
+      if (evt === null) {
       	return true;
+      }
       return !evt.getDefaultPrevented();
     },
 
@@ -415,8 +416,9 @@ qx.Class.define("qx.event.Registration",
     fireNonBubblingEventAsync : function(target, type, clazz, args)
     {
       var evt = this.__fireNonBubblingEvent.apply(this, arguments);
-      if (evt === null)
+      if (evt === null) {
       	return qx.Promise.resolve(true);
+      }
       return evt.promise();
     },
 
