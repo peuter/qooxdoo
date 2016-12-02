@@ -132,7 +132,9 @@ qx.Class.define("qx.event.dispatch.Direct",
               );
             }
           }
-          listeners[i].handler.call(context, event);
+          var promise = listeners[i].handler.call(context, event);
+          if (promise instanceof qx.Promise)
+          	event.addPromise(promise);
         }
       }
     }

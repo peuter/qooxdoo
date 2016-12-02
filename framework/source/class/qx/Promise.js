@@ -429,7 +429,7 @@ qx.Class.define("qx.Promise", {
   },
   
   statics: {
-    
+  	
     /** Bluebird Promise library; always available */
     Bluebird: null,
     
@@ -452,6 +452,7 @@ qx.Class.define("qx.Promise", {
      * state; otherwise the returned promise will be fulfilled with the value. Generally, if you 
      * don't know if a value is a promise or not, Promise.resolve(value) it instead and work with 
      * the return value as a promise.
+     * 
      * @param value {Object}
      * @return {qx.Promise}
      */
@@ -468,7 +469,7 @@ qx.Class.define("qx.Promise", {
      * @return {qx.Promise}
      */
     reject: function(reason) {
-      return this.__callStaticMethod('reject', arguments);
+      return this.__callStaticMethod('reject', arguments, 0);
     },
     
     /**
@@ -830,11 +831,15 @@ qx.Class.define("qx.Promise", {
      * the last value must be a qx.core.Object to distinguish itself from configuration
      * objects passed to some methods.
      * @param args {arguments}
+     * @param minArgs {Integer?} minimum number of arguments expected for the method call;
+     * 	this is used to determine whether the last value is for binding (default is 1)
      * @return {Array} array of new arguments with functions bound as necessary
      */
-    __bindArgs: function(args) {
+    __bindArgs: function(args, minArgs) {
       args = qx.lang.Array.fromArguments(args);
-      if (args.length) {
+      if (minArgs === undefined)
+      	minArgs = 1;
+      if (args.length > minArgs) {
         var context = args[args.length - 1];
         if (context instanceof qx.core.Object) {
           args.pop();
@@ -849,13 +854,16 @@ qx.Class.define("qx.Promise", {
     },
     
     /**
-     * Helper method used to call a Promise method
+     * Helper method used to call a Bluebird Promise method
+     * @param methodName {String} method name to call
+     * @param args {Array} arguments to pass
+     * @param minArgs {Integer?} {@see __bindArgs}
+     * @return {Object?}
      */
-    __callStaticMethod: function(methodName, args) {
-      args = qx.Promise.__bindArgs(args);
+    __callStaticMethod: function(methodName, args, minArgs) {
+      args = qx.Promise.__bindArgs(args, minArgs);
       return this.__wrap(qx.Promise.Bluebird[methodName].apply(qx.Promise.Bluebird, this.__unwrap(args)));
-    }    
-    
+    }
   },
   
   defer: function(statics, members) {
