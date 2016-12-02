@@ -564,10 +564,10 @@ qx.Bootstrap.define("qx.core.Property",
       if (qx.core.Environment.get("qx.debug")) {
       	// Exclude qx.data.model.* because that's from marshalling and will cause conflicts to be reported
       	if (clazz.classname && !clazz.classname.match(/^qx.data.model/)) {
-		      var allNames = [ members.get[name], members.set[name], members.reset[name], "setRuntime" + upname, "resetRuntime" + upname ];
+		      var allNames = [ "get" + upname, "set" + upname, "reset" + upname, "setRuntime" + upname, "resetRuntime" + upname ];
 		      if (config.async) {
-		      	allNames.push(members.get[name] + "Async");
-		      	allNames.push(members.set[name] + "Async");
+		      	allNames.push("get" + upname + "Async");
+		      	allNames.push("set" + upname + "Async");
 		      }
 		      if (config.inheritable || config.apply || config.event || config.deferredInit) {
 		      	allNames.push("init" + upname);

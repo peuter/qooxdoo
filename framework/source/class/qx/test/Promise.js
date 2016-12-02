@@ -529,7 +529,7 @@ qx.Class.define("qx.test.Promise", {
       		
       	});
       
-      this.wait(2500);
+      this.wait(10000);
     },
     
     /**
