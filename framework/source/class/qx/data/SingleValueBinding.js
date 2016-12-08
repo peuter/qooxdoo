@@ -143,7 +143,6 @@ qx.Class.define("qx.data.SingleValueBinding",
       var listenerIds = [];
       var eventNames = [];
       var source = sourceObject;
-      var initialPromise = null;
 
       // add a try catch to make it possible to remove the listeners of the
       // chain in case the loop breaks after some listeners already added.
@@ -164,7 +163,7 @@ qx.Class.define("qx.data.SingleValueBinding",
                 );
               }
               // call the converter if no event could be found on binding creation
-              initialPromise = this.__setInitialValue(undefined, targetObject, targetPropertyChain, options, sourceObject);
+              this.__setInitialValue(undefined, targetObject, targetPropertyChain, options, sourceObject);
               break;
             }
             eventNames.push(eventName);
@@ -183,7 +182,7 @@ qx.Class.define("qx.data.SingleValueBinding",
               var currentValue = source.getItem(itemIndex);
 
               // set the initial value
-              initialPromise = this.__setInitialValue(currentValue, targetObject, targetPropertyChain, options, sourceObject);
+              this.__setInitialValue(currentValue, targetObject, targetPropertyChain, options, sourceObject);
 
               // bind the event
               listenerIds[i] = this.__bindEventToProperty(
@@ -193,7 +192,7 @@ qx.Class.define("qx.data.SingleValueBinding",
               // try to set the initial value
               if (propertyNames[i] != null && source["get" + qx.lang.String.firstUp(propertyNames[i])] != null) {
                 var currentValue = source["get" + qx.lang.String.firstUp(propertyNames[i])]();
-                initialPromise = this.__setInitialValue(currentValue, targetObject, targetPropertyChain, options, sourceObject);
+                this.__setInitialValue(currentValue, targetObject, targetPropertyChain, options, sourceObject);
               }
               // bind the property
               listenerIds[i] = this.__bindEventToProperty(
@@ -277,8 +276,7 @@ qx.Class.define("qx.data.SingleValueBinding",
         listenerIds: listenerIds,
         sources: sources,
         targetListenerIds: targetListenerMap.listenerIds,
-        targets: targetListenerMap.targets,
-        initialPromise: initialPromise
+        targets: targetListenerMap.targets
       };
       // store the bindings
       this.__storeBinding(
@@ -692,7 +690,7 @@ qx.Class.define("qx.data.SingleValueBinding",
           }
           target.setItem(index, value);
         } else {
-          return target["set" + qx.lang.String.firstUp(lastProperty)](value);
+          target["set" + qx.lang.String.firstUp(lastProperty)](value);
         }
       }
     },
@@ -799,13 +797,12 @@ qx.Class.define("qx.data.SingleValueBinding",
       // only set the initial value if one is given (may be null)
       if (value !== undefined) {
         try {
-          var result = this.__setTargetValue(targetObject, targetPropertyChain, value);
+          this.__setTargetValue(targetObject, targetPropertyChain, value);
 
           // tell the user that the setter was invoked probably
           if (options && options.onUpdate) {
             options.onUpdate(sourceObject, targetObject, value);
           }
-          return result;
         } catch (e) {
           if (! (e instanceof qx.core.ValidationError)) {
             throw e;
@@ -974,12 +971,11 @@ qx.Class.define("qx.data.SingleValueBinding",
         }
 
         // try to set the value
-        var result;
         try {
           if (data !== undefined) {
-            result = qx.data.SingleValueBinding.__setTargetValue(targetObject, targetProperty, data);
+            qx.data.SingleValueBinding.__setTargetValue(targetObject, targetProperty, data);
           } else {
-          	result = qx.data.SingleValueBinding.__resetTargetValue(targetObject, targetProperty);
+            qx.data.SingleValueBinding.__resetTargetValue(targetObject, targetProperty);
           }
 
           // tell the user that the setter was invoked probably
@@ -1001,7 +997,6 @@ qx.Class.define("qx.data.SingleValueBinding",
             );
           }
         }
-        return result;
       };
 
       // check if an array index is given

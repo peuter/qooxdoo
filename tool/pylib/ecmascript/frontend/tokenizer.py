@@ -126,13 +126,6 @@ class Tokenizer(object):
 
     def parseToken(self):
         for tok in self.scanner:
-
-            hasNoPreviousDot = True
-            try:
-                hasNoPreviousDot = self.out_stream[-1]['detail'] != "DOT"
-            except (IndexError):
-                pass
-
             # some inital values (tok isinstanceof Scanner.Token())
             token = {
                 "source" : tok.value,
@@ -274,7 +267,7 @@ class Tokenizer(object):
                         token['detail'] = lang.TOKENS[tok.value]
 
                 # JS keywords
-                elif tok.value in lang.RESERVED and hasNoPreviousDot:
+                elif tok.value in lang.RESERVED:
                     # valid syntax:
                     #   a.import            // following if condition checks for this
                     #   a = { import: 1 }   // Note: Generator will still (incorrectly) grumble about that
