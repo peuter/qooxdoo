@@ -40,7 +40,7 @@
  *
  * <a href='http://manual.qooxdoo.org/${qxversion}/pages/widget/image.html' target='_blank'>
  * Documentation of this widget in the qooxdoo manual.</a>
- * 
+ *
  * NOTE: Instances of this class must be disposed of after use
  *
  */
@@ -751,7 +751,7 @@ qx.Class.define("qx.ui.basic.Image",
 
       // Special case for non resource manager handled font icons
       if (isFont) {
-        var size;
+        var size, width, height;
 
         // Adjust size if scaling is applied
         if (this.getScale()) {
@@ -789,15 +789,15 @@ qx.Class.define("qx.ui.basic.Image",
     _applyDimension : function()
     {
       this.base(arguments);
-      
-      var isFont = this.getSource() && qx.lang.String.startsWith(this.getSource(), "@");
+
+      var isFont = qx.util.ResourceManager.getInstance().isFontUri(this.getSource());
       if (isFont) {
         var el = this.getContentElement();
         if (el) {
           if (this.getScale()) {
             var width = this.getWidth() || this.getHeight() || 40;
             var height = this.getHeight() || this.getWidth() || 40;
-            el.setStyle("fontSize", (width > height ? height : width) + "px");
+            el.setStyle("fontSize", this._applySourceRatio(this.getSource(), width > height ? height : width) + "px");
           }
           else {
             var font = qx.theme.manager.Font.getInstance().resolve(this.getSource().match(/@([^/]+)/)[1]);
@@ -805,6 +805,29 @@ qx.Class.define("qx.ui.basic.Image",
           }
         }
       }
+    },
+
+    /**
+     * If available use the ratio defined in the font icon resource to calculate the
+     * correct font size
+     * @param source {String} icon source entry
+     * @param size {Number} current size
+     * @return {Number} size scaled by percentage calculated from icon ration
+     */
+    _applySourceRatio: function(source, size) {
+      var resource = qx.util.ResourceManager.getInstance().getData(source);
+      if (resource && this.getScale()) {
+        var iconWidth = resource[1];
+        var iconHeight = resource[0];
+
+        // scale by percentage to fit in space
+        if (iconHeight < iconWidth) {
+          size = Math.round(size*iconHeight/iconWidth);
+        } else {
+          size = Math.round(size*iconWidth/iconHeight);
+        }
+      }
+      return size;
     },
 
     /**
@@ -892,10 +915,10 @@ qx.Class.define("qx.ui.basic.Image",
      * @param source {String} source path
      */
     __setSource: function (el, source) {
-      var isFont = source && qx.lang.String.startsWith(source, "@");
+      var ResourceManager = qx.util.ResourceManager.getInstance();
+      var isFont = ResourceManager.isFontUri(source);
 
       if (isFont) {
-        var ResourceManager = qx.util.ResourceManager.getInstance();
         var font = qx.theme.manager.Font.getInstance().resolve(source.match(/@([^/]+)/)[1]);
         var fontStyles = qx.lang.Object.clone(font.getStyles());
         delete fontStyles.color;
@@ -905,12 +928,11 @@ qx.Class.define("qx.ui.basic.Image",
         el.setStyle("verticalAlign", "middle");
         el.setStyle("textAlign", "center");
 
-        if (this.getScale()) {
-          el.setStyle("fontSize", (this.__width > this.__height ? this.__height : this.__width) + "px");
-        }
-        else {
-          el.setStyle("fontSize", font.getSize() + "px");
-        }
+        var contentSize = this.__width > this.__height ? this.__height : this.__width;
+        var fontSize = font.getSize();
+        var size = this.getScale() ? contentSize : fontSize;
+        size = this._applySourceRatio(source, size);
+        el.setStyle("fontSize", size + "px");
 
         var resource = ResourceManager.getData(source);
         if (resource) {
