@@ -147,6 +147,10 @@ qx.Class.define("qx.util.ResourceManager",
      */
     getImageFormat : function(id)
     {
+      if (id && id.startsWith("@")) {
+        return "font";
+      }
+
       var entry = this.self(arguments).__registry[id];
       return entry ? entry[2] : null;
     },
@@ -228,7 +232,7 @@ qx.Class.define("qx.util.ResourceManager",
     toDataUri : function (resid)
     {
       var resentry = this.constructor.__registry[resid];
-      var combined = this.constructor.__registry[resentry[4]];
+      var combined = resentry ? this.constructor.__registry[resentry[4]] : null;
       var uri;
       if (combined) {
         var resstruct = combined[4][resid];
@@ -239,6 +243,17 @@ qx.Class.define("qx.util.ResourceManager",
         uri = this.toUri(resid);
       }
       return uri;
+    },
+
+    /**
+     * Checks whether a given resource id for an image is a font handle.
+     *
+     * @param resid {String} resource id of the image
+     * @return {Boolean} True if it's a font URI
+     */
+    isFontUri : function (resid)
+    {
+      return resid ? resid.startsWith("@") : false;
     }
   },
 

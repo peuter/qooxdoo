@@ -84,8 +84,10 @@
  *   </td></tr>
  *   <tr><th>transform</th><td>String</td><td>
  *     On setting of the property value the method of the specified name will
- *     be called. The signature of the method is <code>function(value)</code>.
- *     The parameter <code>value</code> is the value passed to the setter.
+ *     be called. The signature of the method is <code>function(value, oldValue)</code>.
+ *     The parameter <code>value</code> is the value passed to the setter, the
+ *     parameter <code>oldValue</code> is the current value, or undefined if no value
+ *     has been set previously.
  *     The function must return the modified or unmodified value.
  *     Transformation occurs before the check function, so both may be
  *     specified if desired.  Alternatively, the transform function may throw
@@ -907,6 +909,8 @@ qx.Bootstrap.define("qx.core.Property",
      * @param clazz {Class} the class which originally defined the property
      * @param name {String} name of the property
      * @param variant {String} Method variant.
+     * @param args {arguments} Incoming arguments of wrapper method
+     * @return {var} Return value of the generated function
      */
     installOptimizedSetter : function(instance, clazz, name, variant, args)
     {
@@ -924,6 +928,7 @@ qx.Bootstrap.define("qx.core.Property",
      * @param clazz {Class} the class which originally defined the property
      * @param name {String} name of the property
      * @param variant {String} Method variant.
+     * @param args {arguments} Incoming arguments of wrapper method
      * @return {String[]} the string builder array
      */
     __compileSetter: function(instance, clazz, name, variant, args) {
@@ -940,6 +945,10 @@ qx.Bootstrap.define("qx.core.Property",
       this.__emitIsEqualFunction(code, clazz, config, name);
 
       this.__emitSetterPreConditions(code, config, name, variant, incomingValue);
+      
+      if (incomingValue || hasCallback) {
+        this.__emitOldValue(code, config, name);
+      }
 
       if (incomingValue) {
         this.__emitIncomingValueTransformation(code, clazz, config, name);
@@ -963,7 +972,7 @@ qx.Bootstrap.define("qx.core.Property",
       if (!hasCallback) {
         this.__emitStoreValue(code, name, variant, incomingValue);
       } else {
-        this.__emitStoreComputedAndOldValue(code, config, name, variant, incomingValue);
+        this.__emitStoreComputedValue(code, config, name, variant, incomingValue);
       }
 
       if (config.inheritable) {
@@ -1124,7 +1133,7 @@ qx.Bootstrap.define("qx.core.Property",
       // Call user-provided transform method, if one is provided.  Transform
       // method should either throw an error or return the new value.
       if (config.transform) {
-        code.push('value=this.', config.transform, '(value);');
+        code.push('value=this.', config.transform, '(value, old);');
       }
 
       // Call user-provided validate method, if one is provided.  Validate
@@ -1159,7 +1168,7 @@ qx.Bootstrap.define("qx.core.Property",
       );
 
       if (incomingValue) {
-        code.push('if(equ.call(this,this.', store, ',value))return value;');
+        code.push('if(equ.call(this,this.',store,',value))return value;');
       } else if (resetValue) {
         code.push('if(this.', store, '===undefined)return;');
       }
@@ -1295,13 +1304,9 @@ qx.Bootstrap.define("qx.core.Property",
      * @param variant {String} Method variant.
      * @param incomingValue {Boolean} Whether the setter has an incoming value
      */
-    __emitStoreComputedAndOldValue : function(code, config, name, variant, incomingValue)
+    __emitStoreComputedValue : function(code, config, name, variant, incomingValue)
     {
-      if (config.inheritable) {
-        code.push('var computed, old=this.', this.$$store.inherit[name], ';');
-      } else {
-        code.push('var computed, old;');
-      }
+      code.push('var computed;');
 
 
       // OLD = RUNTIME VALUE
@@ -1330,7 +1335,7 @@ qx.Bootstrap.define("qx.core.Property",
       else
       {
         // Use runtime value as it has higher priority
-        code.push('old=computed=this.', this.$$store.runtime[name], ';');
+        code.push('computed=this.', this.$$store.runtime[name], ';');
 
         // Store incoming value
         if (variant === "set")
@@ -1363,23 +1368,11 @@ qx.Bootstrap.define("qx.core.Property",
 
       if (variant === "set")
       {
-        if (!config.inheritable)
-        {
-          // Remember old value
-          code.push('old=this.', this.$$store.user[name], ';');
-        }
-
         // Replace it with new value
         code.push('computed=this.', this.$$store.user[name], '=value;');
       }
       else if (variant === "reset")
       {
-        if (!config.inheritable)
-        {
-          // Remember old value
-          code.push('old=this.', this.$$store.user[name], ';');
-        }
-
         // Delete field
         code.push('delete this.', this.$$store.user[name], ';');
 
@@ -1408,7 +1401,7 @@ qx.Bootstrap.define("qx.core.Property",
         else
         {
           // Use user value where it has higher priority
-          code.push('old=computed=this.', this.$$store.user[name], ';');
+          code.push('computed=this.', this.$$store.user[name], ';');
         }
 
         // Store incoming value
@@ -1433,11 +1426,6 @@ qx.Bootstrap.define("qx.core.Property",
       if (config.themeable)
       {
         code.push('else if(this.', this.$$store.theme[name], '!==undefined){');
-
-        if (!config.inheritable)
-        {
-          code.push('old=this.', this.$$store.theme[name], ';');
-        }
 
         if (variant === "setRuntime")
         {
@@ -1487,10 +1475,6 @@ qx.Bootstrap.define("qx.core.Property",
 
       // OLD = INIT VALUE
       code.push('else if(this.', this.$$store.useinit[name], '){');
-
-      if (!config.inheritable) {
-        code.push('old=this.', this.$$store.init[name], ';');
-      }
 
       if (variant === "init")
       {
@@ -1560,6 +1544,47 @@ qx.Bootstrap.define("qx.core.Property",
         }
 
         // refresh() will work with the undefined value, later
+        code.push('}');
+      }
+    },
+
+
+    /**
+     * Emit code to compute the "old" value.
+     *
+     * @param code {String[]} String array to append the code to
+     * @param config {Object} The property configuration map
+     * @param name {String} name of the property
+     */
+    __emitOldValue : function(code, config, name)
+    {
+      if (config.inheritable) {
+        code.push('var old=this.', this.$$store.inherit[name], ';');
+      } else {
+        code.push('var old;');
+      }
+
+      // OLD = RUNTIME VALUE
+      code.push('if(this.', this.$$store.runtime[name], '!==undefined){');
+      code.push('old=this.', this.$$store.runtime[name], ';');
+      code.push('}');
+
+      // OLD = USER VALUE
+      if (!config.inheritable) {
+        code.push('else if(this.', this.$$store.user[name], '!==undefined){');
+        code.push('old=this.', this.$$store.user[name], ';');
+        code.push('}');
+        
+        // OLD = THEMED VALUE
+        if (config.themeable) {
+          code.push('else if(this.', this.$$store.theme[name], '!==undefined){');
+          code.push('old=this.', this.$$store.theme[name], ';');
+          code.push('}');
+        }
+        
+        // OLD = INIT VALUE
+        code.push('else if(this.', this.$$store.useinit[name], '){');
+        code.push('old=this.', this.$$store.init[name], ';');
         code.push('}');
       }
     },
