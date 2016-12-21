@@ -39,6 +39,8 @@ qx.Class.define("apiviewer.Application",
     this.base(arguments);
     var uri = qx.util.ResourceManager.getInstance().toUri("apiviewer/css/apiviewer.css");
     qx.bom.Stylesheet.includeFile(uri);
+    uri = qx.util.ResourceManager.getInstance().toUri("apiviewer/css/sunlight.default.css");
+    qx.bom.Stylesheet.includeFile(uri);
   },
 
   /*

@@ -16,6 +16,9 @@
 
 ************************************************************************ */
 
+/**
+ * @ignore(Sunlight)
+ */
 qx.Class.define("apiviewer.ui.tabview.AbstractPage",
 {
   extend : qx.ui.tabview.Page,
@@ -68,6 +71,11 @@ qx.Class.define("apiviewer.ui.tabview.AbstractPage",
 
       qx.event.Timer.once(function(e) {
         this._viewer.getContentElement().scrollToY(0);
+        Sunlight.highlightAll( {
+          lineNumbers : true,
+          showMenu : true,
+          enableDoclinks : true
+        } );
       }, this, 0);
     },
 
