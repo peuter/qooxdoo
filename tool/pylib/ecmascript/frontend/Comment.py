@@ -413,21 +413,25 @@ class Comment(object):
 
         first_description = None
         # format texts
+        to_remove = []
         for idx, entry in enumerate(attribs):
             if process_txt and 'text' in entry and len(entry['text'])>0:
                 if format_:
                     entry["text"] = self.formatText(entry["text"])
                 else:
                     entry["text"] = self.cleanupText(entry["text"])
+
             if entry['category'] == 'description':
                 if first_description is None:
                     first_description = entry
                 else:
                     first_description['text'] += "<br/>" + entry['text']
-                    del attribs[idx]
+                    to_remove.append(entry)
 
-        #from pprint import pprint
-        #pprint( attribs)
+        for entry in to_remove:
+          attribs.remove(entry)
+        # from pprint import pprint
+        # pprint( attribs)
         return attribs
 
 
