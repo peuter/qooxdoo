@@ -20,12 +20,16 @@
 #
 ################################################################################
 
-import sys, string, re
+import sys, string, re, os
 
 from ecmascript.frontend import tree, lang
 from generator import Context as context
 from pyparse import pyparsing as py
 from textile import textile
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', '..', 'utils', 'docutils', 'directives'))
+from helper.widget_example_parser import WidgetExampleParser
+
+parser = WidgetExampleParser('source')
 
 ##
 # Many Regexp's
@@ -283,6 +287,7 @@ class Comment(object):
     def parse(self, format_=True, process_txt=True, want_errors=False):
 
         hint_sign = re.compile(r'^\s*@(@?\w+)')
+        multiline_hints = ['widgetexample']
 
         def getOpts():
             class COpts(object): pass
@@ -313,10 +318,11 @@ class Comment(object):
             section_lines = [[line_no,'']]  # add a fake empty description
             in_hint = 0
             for line in comment_lines:
-                if hint_sign.search(line):
+                mo = hint_sign.search(line)
+                if mo:
                     section_lines.append([line_no,line])  # new section
-                    in_hint = 1
-                elif in_hint:
+                    in_hint = mo.group(1)
+                elif in_hint and in_hint not in multiline_hints:
                     line = line.strip()
                     if line:
                         section_lines[-1][1] += ' ' + line # concat to previous
@@ -405,14 +411,20 @@ class Comment(object):
                 entry['line'] = line_no
                 attribs.append(entry)
 
-
+        first_description = None
         # format texts
-        for entry in attribs:
+        for idx, entry in enumerate(attribs):
             if process_txt and 'text' in entry and len(entry['text'])>0:
                 if format_:
                     entry["text"] = self.formatText(entry["text"])
                 else:
                     entry["text"] = self.cleanupText(entry["text"])
+            if entry['category'] == 'description':
+                if first_description is None:
+                    first_description = entry
+                else:
+                    first_description['text'] += "<br/>" + entry['text']
+                    del attribs[idx]
 
         #from pprint import pprint
         #pprint( attribs)
@@ -430,6 +442,11 @@ class Comment(object):
             'text' : presult.text.strip(),
         }
         return res
+
+    ##
+    # "@widgetexample text"
+    def parse_at_widgetexample(self, line):
+       return parser.parse_at_widgetexample(line)
 
     # the next would be close to the spec (but huge!)
     #identi = py.Word(u''.join(lang.IDENTIFIER_CHARS_START), u''.join(lang.IDENTIFIER_CHARS_BODY))
