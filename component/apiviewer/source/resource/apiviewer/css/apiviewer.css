@@ -524,3 +524,21 @@ div.ClassViewer {
 	text-decoration: line-through;
 	color: #7193b9;
 }
+
+div.class-description div.widget-example {
+  margin-top: 5px; float:left; width: 50%; text-align: center;
+}
+div.class-description div.widget-example.last,
+div.class-description div.caption,
+div.class-description div.code {
+  clear: left;
+}
+div.class-description div.widget-example label,
+div.class-description div.caption {
+  margin: 3px 0 10px 0;
+}
+div.class-description div.widget-example label {
+  width: 100%;
+  text-align: center;
+  display: block;
+}
