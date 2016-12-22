@@ -542,3 +542,13 @@ div.class-description div.widget-example label {
   text-align: center;
   display: block;
 }
+
+div.class-description div.authors label, div.class-description div.since label {
+  font-weight: bold;
+  float: left;
+  margin-right: 0.5em;
+}
+div.class-description div.authors p, div.class-description div.since p {
+  margin-top: 0;
+  margin-bottom: 0;
+}

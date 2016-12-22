@@ -375,6 +375,8 @@ class Comment(object):
             'abstract', # @abstract; pend. bug#6738
             'tag',      # @tag foo; in Demobrowser
             'protected', # @protected used in generated docs in api.py
+            'author',
+            'since'
         )
         # ----------------------------------------------------------------------
 
@@ -412,6 +414,8 @@ class Comment(object):
                 attribs.append(entry)
 
         first_description = None
+        authors = []
+        since = []
         # format texts
         to_remove = []
         for idx, entry in enumerate(attribs):
@@ -428,8 +432,22 @@ class Comment(object):
                     first_description['text'] += "<br/>" + entry['text']
                     to_remove.append(entry)
 
+            if entry['category'] == "author":
+                authors.append(entry['text'])
+            if entry['category'] == "since":
+              since.append(entry['text'])
+
         for entry in to_remove:
           attribs.remove(entry)
+
+        # prepend authors + since to description
+        if len(since):
+          first_description['text'] = '<div class="since"><label>Since:</label>%s</div>%s' % (", ".join(since), first_description['text'])
+
+        if len(authors):
+          title = "Author" if len(authors) == 1 else "Authors"
+          first_description['text'] = '<div class="authors"><label>%s:</label>%s</div>%s' % (title, ", ".join(authors), first_description['text'])
+
         # from pprint import pprint
         # pprint( attribs)
         return attribs
