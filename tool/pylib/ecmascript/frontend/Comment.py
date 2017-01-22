@@ -26,10 +26,8 @@ from ecmascript.frontend import tree, lang
 from generator import Context as context
 from pyparse import pyparsing as py
 from textile import textile
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', '..', 'utils', 'docutils', 'directives'))
-from helper.widget_example_parser import WidgetExampleParser
 
-parser = WidgetExampleParser('source')
+parser = None
 
 ##
 # Many Regexp's
@@ -468,6 +466,11 @@ class Comment(object):
     ##
     # "@widgetexample text"
     def parse_at_widgetexample(self, line):
+       if parser is None:
+          sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', '..', 'utils', 'docutils', 'directives'))
+          from helper.widget_example_parser import WidgetExampleParser
+          parser = WidgetExampleParser('source')
+
        return parser.parse_at_widgetexample(line)
 
     # the next would be close to the spec (but huge!)
