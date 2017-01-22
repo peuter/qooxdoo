@@ -442,11 +442,11 @@ class Comment(object):
 
         # prepend authors + since to description
         if len(since):
-          first_description['text'] = '<div class="since"><label>Since:</label>%s</div>%s' % (", ".join(since), first_description['text'])
+          first_description['text'] += '<div class="since"><label>Since:</label>%s</div>' % ", ".join(since)
 
         if len(authors):
           title = "Author" if len(authors) == 1 else "Authors"
-          first_description['text'] = '<div class="authors"><label>%s:</label>%s</div>%s' % (title, ", ".join(authors), first_description['text'])
+          first_description['text'] += '<div class="authors"><label>%s:</label>%s</div>' % (title, ", ".join(authors))
 
         # from pprint import pprint
         # pprint( attribs)
