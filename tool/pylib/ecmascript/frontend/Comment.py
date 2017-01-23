@@ -466,6 +466,7 @@ class Comment(object):
     ##
     # "@widgetexample text"
     def parse_at_widgetexample(self, line):
+       global parser
        if parser is None:
           sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', '..', 'utils', 'docutils', 'directives'))
           from helper.widget_example_parser import WidgetExampleParser
