@@ -438,7 +438,7 @@ class Comment(object):
         for entry in to_remove:
           attribs.remove(entry)
 
-        # prepend authors + since to description
+        # append authors + since to description
         if len(since):
           first_description['text'] += '<div class="since"><label>Since:</label>%s</div>' % ", ".join(since)
 
