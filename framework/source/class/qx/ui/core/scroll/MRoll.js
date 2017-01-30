@@ -28,7 +28,9 @@ qx.Mixin.define("qx.ui.core.scroll.MRoll",
   members :
   {
     __cancelRoll : null,
-
+    __cancelTimer : null,
+    __pointerDown : null,
+    __currentMomentumDirection: null,
 
     /**
      * Responsible for adding the event listener needed for scroll handling.
@@ -49,12 +51,61 @@ qx.Mixin.define("qx.ui.core.scroll.MRoll",
 
 
     /**
-     * Handler for the pointerdown event which simply stops the momentum scrolling.
+     * Handler for the pointerdown event which adds a timer and listeners to check if the momentum scrolling can be canceled.
      *
      * @param e {qx.event.type.Pointer} pointerdown event
      */
     _onPointerDownForRoll : function(e) {
-      this.__cancelRoll = e.getPointerId();
+      this.__pointerDown = {
+        top: e.getDocumentTop(),
+        left: e.getDocumentLeft(),
+        time: Date.now(),
+        id : e.getPointerId()
+      }
+      this.__cancelTimer = qx.event.Timer.once(this._checkForCancel, this, 10);
+      this.addListener("pointermove", this._checkForCancel, this);
+      this.addListener("pointerup", this._checkForCancel, this);
+    },
+
+    /**
+     * Checks if the momentum scrolling can be canceled.
+     *
+     * @param e {qx.event.type.Event} pointermove/-up or interval event
+     */
+    _checkForCancel : function(e) {
+      var removeListeners = false;
+      if (!this.__cancelRoll) {
+        if (e.getType() === "interval") {
+          // fired by the timer, which means the user triggered no pointermove/-up events in the meantime
+          this.__cancelRoll = this.__pointerDown.id;
+          removeListeners = true;
+          this.__cancelTimer = null;
+        }
+        else {
+          if (this.__cancelTimer) {
+            this.__cancelTimer.stop();
+            this.__cancelTimer = null;
+          }
+          var deltaX = e.getDocumentLeft() - this.__pointerDown.left;
+          var deltaY = e.getDocumentTop() - this.__pointerDown.top;
+          var delta = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+          if (delta < 5) {
+            // not much movement here, abort the momentum scroll
+            this.__cancelRoll = this.__pointerDown.id;
+            removeListeners = true;
+          }
+        }
+      } else {
+        removeListeners = true;
+        if (this.__cancelTimer) {
+          this.__cancelTimer.stop();
+          this.__cancelTimer = null;
+        }
+      }
+      if (removeListeners) {
+        this.removeListener("pointermove", this._checkForCancel, this);
+        this.removeListener("pointerup", this._checkForCancel, this);
+      }
     },
 
 
