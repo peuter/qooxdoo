@@ -294,6 +294,7 @@ class Comment(object):
                 "lint-check/warn-unknown-jsdoc-keys", False)
             opts.warn_jsdoc_key_syntax = context.jobconf.get(
                 "lint-check/warn-jsdoc-key-syntax", True)
+            opts.generate_widget_examples = context.jobconf.get("lint-check/generate-widget-examples", False)
             return opts
 
         opts = getOpts()
@@ -398,7 +399,8 @@ class Comment(object):
                 continue
             # known entries like @param
             elif hasattr(self, "parse_at_"+hint_key):
-                entry = handle_known(hint_key, line)
+                if hint_key != "widgetexample" or opts.generate_widget_examples is True:
+                  entry = handle_known(hint_key, line)
             # known entries with default parse
             elif hint_key in Keys_default_parsed:
                 entry = self.parse_at__default_(line)
@@ -466,13 +468,13 @@ class Comment(object):
     ##
     # "@widgetexample text"
     def parse_at_widgetexample(self, line):
-       global parser
-       if parser is None:
-          sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', '..', 'utils', 'docutils', 'directives'))
-          from helper.widget_example_parser import WidgetExampleParser
-          parser = WidgetExampleParser('source')
+        global parser
+        if parser is None:
+            sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', '..', 'utils', 'docutils', 'directives'))
+            from helper.widget_example_parser import WidgetExampleParser
+            parser = WidgetExampleParser('source')
 
-       return parser.parse_at_widgetexample(line)
+        return parser.parse_at_widgetexample(line)
 
     # the next would be close to the spec (but huge!)
     #identi = py.Word(u''.join(lang.IDENTIFIER_CHARS_START), u''.join(lang.IDENTIFIER_CHARS_BODY))
