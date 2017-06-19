@@ -1,5 +1,5 @@
 dist: trusty
-sudo: required
+sudo: false
 language: php
 php: 5.6
 addons:
@@ -7,6 +7,7 @@ addons:
     packages:
     - python-sphinx
     - libstdc++6
+    - libnss3
 env:
 - QXBROWSER=Firefox QXVERSION=latest
 - QXBROWSER=Firefox QXVERSION=esr-latest
@@ -23,7 +24,7 @@ before_install:
 - gem install sass -v 3.4.20
 - curl -L https://github.com/raphink/travis-texlive/releases/download/2015-07-14_05/texlive.tar.xz  | tar xJC `pwd`
 install:
-- apt-get --only-upgrade install libnss3
+- dpkg -s libnss3
 - "./.travis/browser-setup.sh"
 - export CHROME_BIN=`pwd`/chrome/google-chrome
 - export PATH=`pwd`/firefox:`pwd`/texlive/bin/x86_64-linux:$PATH
