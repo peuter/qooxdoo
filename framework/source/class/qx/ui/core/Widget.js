@@ -890,8 +890,8 @@ qx.Class.define("qx.ui.core.Widget",
       }
       return null;
     },
-    
-    
+
+
     /**
      * Whether the "parent" widget contains the "child" widget.
      *
@@ -2655,6 +2655,9 @@ qx.Class.define("qx.ui.core.Widget",
         // to not include positioning information anymore (e.g. #3)
         selector = id.reverse().join("/").replace(/#[0-9]+/g, "");
         this.__appearanceSelector = selector;
+        if (qx.core.Environment.get("qx.debug")) {
+          this.getContentElement().setAttribute("qxAppearance", this.__appearanceSelector);
+        }
       }
 
       // Query current selector
@@ -3697,9 +3700,9 @@ qx.Class.define("qx.ui.core.Widget",
 
 
     /**
-     * Return the ID (name) if this instance was a created as a child control of another widget. 
-     * 
-     * See the first parameter id in {@link qx.ui.core.Widget#_createChildControlImpl} 
+     * Return the ID (name) if this instance was a created as a child control of another widget.
+     *
+     * See the first parameter id in {@link qx.ui.core.Widget#_createChildControlImpl}
      *
      * @return {String|null} ID of the current widget or null if it was not created as a subcontrol
      */
