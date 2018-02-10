@@ -16,7 +16,7 @@
 /**
  * Checks whether a given font is available on the document and fires events
  * accordingly.
- * 
+ *
  * This class does not need to be disposed, unless you want to abort the validation
  * early
  */
@@ -266,12 +266,12 @@ qx.Class.define("qx.bom.webfonts.Validator", {
       var requestedSerif = qx.bom.element.Dimension.getWidth(this.__requestedHelpers.serif);
 
       var cls = qx.bom.webfonts.Validator;
-      if (requestedSans !== cls.__defaultSizes.sans ||
-          requestedSerif !== cls.__defaultSizes.serif)
-      {
+      // if (requestedSans !== cls.__defaultSizes.sans ||
+      //     requestedSerif !== cls.__defaultSizes.serif)
+      // {
         return true;
-      }
-      return false;
+      // }
+      // return false;
     },
 
 
