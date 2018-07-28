@@ -8,8 +8,7 @@
      2006 STZ-IDA, Germany, http://www.stz-ida.de
 
    License:
-     LGPL: http://www.gnu.org/licenses/lgpl.html
-     EPL: http://www.eclipse.org/org/documents/epl-v10.php
+     MIT: https://opensource.org/licenses/MIT
      See the LICENSE file in the project's top-level directory for details.
 
    Authors:
@@ -1379,8 +1378,8 @@ qx.Class.define("qx.ui.table.Table",
      */
     _onKeyPress : function(evt)
     {
- -     qx.log.Logger.deprecatedMethodWarning(arguments.callee,"The method '_onKeyPress()' is deprecated. Please use '_onKeyDown()' instead.");
- -     qx.log.Logger.deprecateMethodOverriding(this, qx.ui.table.Table, "_onKeyPress", "The method '_onKeyPress()' is deprecated. Please use '_onKeyDown()' instead.");
+       qx.log.Logger.deprecatedMethodWarning(qx.ui.table.Table._onKeyPress, "The method '_onKeyPress()' is deprecated. Please use '_onKeyDown()' instead.");
+       qx.log.Logger.deprecateMethodOverriding(this, qx.ui.table.Table, "_onKeyPress", "The method '_onKeyPress()' is deprecated. Please use '_onKeyDown()' instead.");
        this._onKeyDown(evt);
     },
     /**
